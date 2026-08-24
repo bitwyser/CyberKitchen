@@ -131,9 +131,31 @@ CK.ui = (function () {
     return f;
   }
 
+  /* <select> from [{value,label}] (or ['a','b']); onChange(value) */
+  function select(items, onChange, current) {
+    var s = el('select', { class: 'inp' });
+    items.forEach(function (it) {
+      var v = it.value != null ? it.value : it, t = it.label != null ? it.label : it;
+      var o = el('option'); o.value = v; o.textContent = t; s.appendChild(o);
+    });
+    if (current != null) s.value = current;
+    if (onChange) s.addEventListener('change', function () { onChange(s.value); });
+    return s;
+  }
+
+  /* A checkbox toggle row; onChange(checked) */
+  function toggle(labelText, checked, onChange) {
+    var wrap = el('label', { class: 'toggle-row' });
+    var cb = el('input', { type: 'checkbox' }); cb.checked = !!checked;
+    wrap.appendChild(cb); wrap.appendChild(document.createTextNode(labelText));
+    if (onChange) cb.addEventListener('change', function () { onChange(cb.checked); });
+    return { wrap: wrap, cb: cb };
+  }
+
   return {
     head: head, iconBtn: iconBtn, miniBtn: miniBtn,
     selStrip: selStrip, setSel: setSel, picker: picker,
-    textPanel: textPanel, ioRow: ioRow, configPanel: configPanel, field: field
+    textPanel: textPanel, ioRow: ioRow, configPanel: configPanel, field: field,
+    select: select, toggle: toggle
   };
 })();

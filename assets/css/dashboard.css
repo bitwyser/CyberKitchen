@@ -214,6 +214,9 @@ main{padding:12px 14px; overflow:hidden; display:flex; flex-direction:column; mi
 .row-out:last-child{border-bottom:none;}
 .row-out .k{font-size:10px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--faint); width:88px; flex-shrink:0;}
 .row-out .v{flex:1; font-family:'SF Mono','Fira Code','Consolas',monospace; font-size:12.5px; word-break:break-all; color:var(--txt);}
+.row-out.cmp-hit{background:rgba(16,185,129,.1); border-radius:6px;}
+.row-out.cmp-hit .v{color:var(--ok);}
+.row-out.cmp-hit .k{color:var(--ok);}
 .toggle-row{display:flex; align-items:center; gap:7px; font-size:12px; color:var(--txt); cursor:pointer; user-select:none;}
 .toggle-row input{accent-color:var(--acc); width:15px; height:15px; cursor:pointer;}
 .range-row{display:flex; align-items:center; gap:10px;}

@@ -5,7 +5,7 @@
    navigations fall back to dashboard.html when offline.
    Relative paths keep it working under any base path (e.g. /CyberKitchen/).
 */
-var CACHE = 'cyberkitchen-v1';
+var CACHE = 'cyberkitchen-v2';
 var ASSETS = [
   'dashboard.html',
   'manifest.webmanifest',
@@ -14,6 +14,7 @@ var ASSETS = [
   'assets/js/core.js',
   'assets/js/ui.js',
   'assets/js/vendor/hashlib.js',
+  'assets/js/vendor/crypto-js.min.js',
   'assets/js/vendor/bcrypt.min.js',
   'assets/js/vendor/argon2-bundled.min.js',
   'assets/js/tools/encode.js',

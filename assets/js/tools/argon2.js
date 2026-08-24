@@ -31,9 +31,16 @@
     var memInput = el('input', { class: 'inp sm', type: 'number', min: '256', max: '1048576', step: '256', value: '4096' });
     var timeInput = el('input', { class: 'inp sm', type: 'number', min: '1', max: '20', value: '3' });
     var parInput = el('input', { class: 'inp sm', type: 'number', min: '1', max: '16', value: '1' });
+    var lenInput = el('input', { class: 'inp sm', type: 'number', min: '16', max: '64', value: '32' });
     form.appendChild(ui.field('Memory (KiB)', memInput));
     form.appendChild(ui.field('Iterations', timeInput));
     form.appendChild(ui.field('Parallelism', parInput));
+    form.appendChild(ui.field('Hash length', lenInput));
+    var saltTog = ui.toggle('Custom salt', false, function () { saltField.style.display = saltTog.cb.checked ? '' : 'none'; });
+    form.appendChild(ui.field('Salt', saltTog.wrap));
+    var saltInput = el('input', { class: 'inp', type: 'text', spellcheck: 'false', autocomplete: 'off', placeholder: 'Salt (min 8 chars)' });
+    var saltField = ui.field('Custom salt', saltInput); saltField.style.display = 'none'; saltField.style.flex = '1'; saltField.style.minWidth = '220px';
+    form.appendChild(saltField);
     cfg.appendChild(form);
     root.appendChild(cfg);
 
@@ -46,16 +53,19 @@
     function clearV() { outP.ta.classList.remove('verify-match', 'verify-fail'); }
     function updateSel() { varPk.setActive(variant); var v = VARIANTS[variant]; ui.setSel(strip, v.label, v.badge, v.desc); }
     function params() {
-      return { mem: Math.max(256, +memInput.value || 4096), time: Math.max(1, +timeInput.value || 3), par: Math.max(1, +parInput.value || 1) };
+      return { mem: Math.max(256, +memInput.value || 4096), time: Math.max(1, +timeInput.value || 3), par: Math.max(1, +parInput.value || 1), len: Math.max(16, Math.min(64, +lenInput.value || 32)) };
     }
     function argonType() { return { d: argon2.ArgonType.Argon2d, i: argon2.ArgonType.Argon2i, id: argon2.ArgonType.Argon2id }[variant]; }
 
     function doHash() {
       if (typeof argon2 === 'undefined') { ctx.toast('Argon2 library not loaded', 'error'); return; }
       var pw = inP.ta.value; if (!pw) { ctx.toast('Password is empty', 'warn'); return; }
-      var p = params(), salt = crypto.getRandomValues(new Uint8Array(16)), t0 = performance.now();
+      var p = params(), t0 = performance.now();
+      var salt;
+      if (saltTog.cb.checked) { var sv = saltInput.value; if (sv.length < 8) { ctx.toast('Custom salt must be at least 8 characters', 'error'); return; } salt = new TextEncoder().encode(sv); }
+      else salt = crypto.getRandomValues(new Uint8Array(16));
       ctx.toast('Hashing (' + VARIANTS[variant].label + ', ' + p.mem + ' KiB)...', 'success');
-      argon2.hash({ pass: pw, salt: salt, time: p.time, mem: p.mem, parallelism: p.par, hashLen: 32, type: argonType() })
+      argon2.hash({ pass: pw, salt: salt, time: p.time, mem: p.mem, parallelism: p.par, hashLen: p.len, type: argonType() })
         .then(function (res) { outP.ta.value = res.encoded; clearV(); ctx.toast('Hashed in ' + Math.round(performance.now() - t0) + ' ms', 'success'); })
         .catch(function (e) { ctx.toast('Hash failed: ' + (e.message || e), 'error'); });
     }
@@ -68,7 +78,7 @@
         .then(function () { clearV(); outP.ta.classList.add('verify-match'); ctx.toast('Match: password is correct', 'success'); })
         .catch(function () { clearV(); outP.ta.classList.add('verify-fail'); ctx.toast('No match', 'error'); });
     }
-    function doReset() { inP.ta.value = ''; outP.ta.value = ''; variant = 'id'; memInput.value = '4096'; timeInput.value = '3'; parInput.value = '1'; updateSel(); clearV(); ctx.toast('Reset complete', 'success'); }
+    function doReset() { inP.ta.value = ''; outP.ta.value = ''; variant = 'id'; memInput.value = '4096'; timeInput.value = '3'; parInput.value = '1'; lenInput.value = '32'; saltTog.cb.checked = false; saltInput.value = ''; saltField.style.display = 'none'; updateSel(); clearV(); ctx.toast('Reset complete', 'success'); }
 
     updateSel();
     return {
