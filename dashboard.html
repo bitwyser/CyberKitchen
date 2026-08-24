@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CyberKitchen - Recipes for Hackers</title>
+  <link rel="stylesheet" href="assets/css/dashboard.css">
+</head>
+<body>
+
+  <header>
+    <button class="icon-btn hamb" id="hamburger" title="Menu" aria-label="Open menu">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+    </button>
+    <a class="brand" href="dashboard.html">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3v6M12 3v6M6 3v6a3 3 0 0 0 6 0M9 9v12M4 21h16M18 3c-1.5 0-3 2-3 5s1.5 4 3 4v9"/></svg>
+      CyberKitchen
+    </a>
+    <span class="dot"></span>
+    <span class="sub">Recipes for Hackers</span>
+    <div class="spacer"></div>
+    <button class="icon-btn" id="themeBtn" title="Toggle theme" aria-label="Toggle theme"><span id="themeIcon"></span></button>
+  </header>
+
+  <div class="shell">
+    <nav>
+      <div class="nav-scroll" id="railScroll"></div>
+      <button class="nav-toggle" id="collapseBtn" title="Collapse sidebar">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></svg>
+        <span class="ntxt">Collapse</span>
+      </button>
+    </nav>
+
+    <div class="nav-backdrop" id="backdrop"></div>
+
+    <main id="main"></main>
+  </div>
+
+  <script src="assets/js/core.js"></script>
+  <script>
+    /* Tool manifest. Icons are inner SVG paths (rendered by CK.iconSvg).
+       Each tool's logic is registered later via CK.registerTool(id, fn). */
+    CK.defineTools([
+      { id:'aes',       label:'AES',                category:'Encryption', tag:'AES',  icon:'<circle cx="8" cy="15" r="4"/><path d="M10.8 12.2 20 3M17 6l3 0 0 3M14 9l2 2"/>' },
+      { id:'rsa',       label:'RSA',                category:'Encryption', tag:'RSA',  icon:'<path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z"/>' },
+      { id:'classical', label:'Classical Ciphers',  category:'Encryption', tag:'27',   icon:'<path d="M4 7V5h16v2M9 20h6M12 5v15"/>' },
+      { id:'hash',      label:'Hash Generator',     category:'Hashing',    tag:'SHA3', icon:'<path d="M4 9h16M4 15h16M10 3 8 21M16 3l-2 18"/>' },
+      { id:'bcrypt',    label:'Bcrypt',             category:'Hashing',    tag:'bc',   icon:'<path d="M6.5 12c3-5 8-5 11 0-3 5-8 5-11 0zM15 11.5v.01"/>' },
+      { id:'argon2',    label:'Argon2',             category:'Hashing',    tag:'a2',   icon:'<path d="M12 3c3 4 5 6.5 5 10a5 5 0 0 1-10 0c0-3.5 2-6 5-10z"/>' },
+      { id:'encode',    label:'Encoder / Decoder',  category:'Encoding',   tag:'28',   icon:'<path d="M7 7 3 12l4 5M17 7l4 5-4 5M14 4l-4 16"/>' },
+      { id:'number',    label:'Number Converter',   category:'Encoding',   tag:'hex',  icon:'<path d="M6 4v16M6 4h4a3 3 0 0 1 0 6H6M14 4h4v6h-4zM14 14h4v6h-4z"/>' },
+      { id:'password',  label:'Password Generator', category:'Generators', tag:'pw',   icon:'<rect x="4" y="4" width="16" height="16" rx="3"/><circle cx="9" cy="9" r="1.2"/><circle cx="15" cy="15" r="1.2"/><circle cx="15" cy="9" r="1.2"/><circle cx="9" cy="15" r="1.2"/>' },
+      { id:'fakedata',  label:'Fake Data',          category:'Generators', tag:'fkr',  icon:'<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/>' }
+    ], ['Encryption','Hashing','Encoding','Generators']);
+
+    CK.boot();
+  </script>
+</body>
+</html>
