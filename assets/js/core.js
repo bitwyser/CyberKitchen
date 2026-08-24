@@ -225,6 +225,8 @@ var CK = (function () {
       _containers[k].hidden = (k !== id);
     });
     _markActiveRail(id);
+    var t = getTool(id);
+    if (t) document.title = t.label + ' - CyberKitchen';
     var api = _apis[id];
     if (api && typeof api.onActivate === 'function') api.onActivate();
   }

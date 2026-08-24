@@ -4,6 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CyberKitchen - Recipes for Hackers</title>
+  <meta name="description" content="Offline browser toolkit for encryption, hashing, encoding, conversion and generators.">
+  <meta name="theme-color" content="#3b82f6">
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="assets/icon.svg">
+  <link rel="manifest" href="manifest.webmanifest">
   <link rel="stylesheet" href="assets/css/dashboard.css">
 </head>
 <body>
@@ -68,6 +73,12 @@
     ], ['Encryption','Hashing','Encoding','Generators']);
 
     CK.boot();
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('sw.js').catch(function () {});
+      });
+    }
   </script>
 </body>
 </html>
