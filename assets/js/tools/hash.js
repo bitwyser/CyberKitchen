@@ -52,14 +52,14 @@
 
     var cfg = ui.configPanel();
     var form = el('div', { class: 'cfg-form' });
-    var inFmt = ui.select([['utf8', 'UTF-8'], ['hex', 'Hex'], ['base64', 'Base64']].map(o), function () { compute(); }, 'utf8');
+    var inFmt = ui.select([['utf8', 'UTF-8'], ['hex', 'Hexadecimal'], ['base64', 'Base64']].map(o), function () { compute(); }, 'utf8');
     form.appendChild(ui.field('Input format', inFmt));
-    var outFmt = ui.select([['hex', 'Hex (lower)'], ['HEX', 'Hex (UPPER)'], ['base64', 'Base64'], ['base64url', 'Base64URL']].map(o), function () { compute(); }, 'hex');
+    var outFmt = ui.select([['hex', 'Hexadecimal (lower)'], ['HEX', 'Hexadecimal (UPPER)'], ['base64', 'Base64'], ['base64url', 'Base64 URL-safe']].map(o), function () { compute(); }, 'hex');
     form.appendChild(ui.field('Output format', outFmt));
     var hmacTog = ui.toggle('HMAC', false, function () { updateHmac(); compute(); });
     form.appendChild(ui.field('Mode', hmacTog.wrap));
     var keyInput = el('input', { class: 'inp', type: 'text', spellcheck: 'false', autocomplete: 'off', placeholder: 'HMAC key' });
-    var keyFmt = ui.select([['utf8', 'UTF-8'], ['hex', 'Hex'], ['base64', 'Base64']].map(o), function () { compute(); }, 'utf8');
+    var keyFmt = ui.select([['utf8', 'UTF-8'], ['hex', 'Hexadecimal'], ['base64', 'Base64']].map(o), function () { compute(); }, 'utf8');
     var keyWrap = el('div', { style: 'display:flex; gap:5px;' }); keyInput.style.flex = '1'; keyFmt.style.width = 'auto'; keyWrap.appendChild(keyInput); keyWrap.appendChild(keyFmt);
     var keyField = ui.field('HMAC key', keyWrap); keyField.style.flex = '2'; keyField.style.minWidth = '240px';
     form.appendChild(keyField);

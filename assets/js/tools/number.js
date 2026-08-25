@@ -48,7 +48,7 @@
     var form = el('div', { class: 'cfg-form' });
     var input = el('input', { class: 'inp', type: 'text', spellcheck: 'false', autocomplete: 'off', placeholder: 'Enter a value...' });
     var vf = ui.field('Value', input); vf.style.flex = '1'; vf.style.minWidth = '220px'; form.appendChild(vf);
-    var baseSel = ui.select([['bin', 'Binary'], ['oct', 'Octal'], ['dec', 'Decimal'], ['hex', 'Hex'], ['b32', 'Base32'], ['b36', 'Base36'], ['b58', 'Base58'], ['b62', 'Base62'], ['cust', 'Custom base']].map(o), function (v) { from = v; custField.style.display = v === 'cust' ? '' : 'none'; convert(); }, 'dec');
+    var baseSel = ui.select([['bin', 'Binary'], ['oct', 'Octal'], ['dec', 'Decimal'], ['hex', 'Hexadecimal'], ['b32', 'Base32'], ['b36', 'Base36'], ['b58', 'Base58'], ['b62', 'Base62'], ['cust', 'Custom base']].map(o), function (v) { from = v; custField.style.display = v === 'cust' ? '' : 'none'; convert(); }, 'dec');
     form.appendChild(ui.field('Input base', baseSel));
     var custInput = el('input', { class: 'inp sm', type: 'number', min: '2', max: '36', value: '3' });
     var custField = ui.field('Custom base', custInput); custField.style.display = 'none'; form.appendChild(custField);

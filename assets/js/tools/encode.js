@@ -254,16 +254,16 @@
     root.appendChild(cfg);
 
     var io = ui.ioRow();
-    var inP = ui.textPanel({ title: 'INPUT / PLAIN', icon: I_FILE, placeholder: 'Type or paste text to encode...', primary: { label: 'Encode', cls: 'enc', onClick: doEncode }, actions: ['copy', 'paste', 'clear', 'download'], downloadName: 'plain.txt', onInput: clearVerify });
-    var outP = ui.textPanel({ title: 'OUTPUT / ENCODED', icon: I_CODE, placeholder: 'Encoded result, or paste here to decode...', primary: { label: 'Decode', cls: 'dec', onClick: doDecode }, actions: ['copy', 'clear', 'download'], downloadName: 'encoded.txt', onInput: clearVerify });
+    var inP = ui.textPanel({ title: 'INPUT', icon: I_FILE, placeholder: 'Text to encode, or encoded data to decode...', primaries: [{ label: 'Encode', cls: 'enc', onClick: doEncode }, { label: 'Decode', cls: 'dec', onClick: doDecode }], actions: ['copy', 'paste', 'clear', 'download'], downloadName: 'input.txt', onInput: clearVerify });
+    var outP = ui.textPanel({ title: 'OUTPUT', icon: I_CODE, placeholder: 'Result appears here...', actions: ['copy', 'paste', 'clear', 'download'], downloadName: 'output.txt' });
     io.appendChild(inP.panel); io.appendChild(outP.panel);
     root.appendChild(io);
 
     function clearVerify() { outP.ta.classList.remove('verify-match', 'verify-fail'); }
     function select(id) { var e = getEnc(id); if (!e) return; current = id; pk.setActive(id); ui.setSel(strip, e.label, e.badge, e.desc); clearVerify(); }
     function doEncode() { try { var e = getEnc(current); if (!inP.ta.value) throw new Error('Input is empty'); outP.ta.value = e.enc(inP.ta.value); clearVerify(); ctx.toast(e.label + ' encoded', 'success'); } catch (err) { ctx.toast(err.message, 'error'); } }
-    function doDecode() { try { var e = getEnc(current); if (!outP.ta.value) throw new Error('Encoded panel is empty'); inP.ta.value = e.dec(outP.ta.value); clearVerify(); ctx.toast(e.label + ' decoded', 'success'); } catch (err) { ctx.toast(err.message, 'error'); } }
-    function doSwap() { var a = inP.ta.value; inP.ta.value = outP.ta.value; outP.ta.value = a; clearVerify(); ctx.toast('Panels swapped', 'success'); }
+    function doDecode() { try { var e = getEnc(current); if (!inP.ta.value) throw new Error('Input is empty'); outP.ta.value = e.dec(inP.ta.value); clearVerify(); ctx.toast(e.label + ' decoded', 'success'); } catch (err) { ctx.toast(err.message, 'error'); } }
+    function doSwap() { inP.ta.value = outP.ta.value; outP.ta.value = ''; clearVerify(); ctx.toast('Output moved to input', 'success'); }
     function doVerify() {
       try {
         var left = inP.ta.value.trim(), right = outP.ta.value.trim();
@@ -275,7 +275,7 @@
       } catch (err) { ctx.toast(err.message, 'error'); }
     }
     function doDetect() {
-      var s = outP.ta.value.trim() || inP.ta.value.trim();
+      var s = inP.ta.value.trim() || outP.ta.value.trim();
       if (!s) { ctx.toast('Enter data first', 'warn'); return; }
       var id = detect(s);
       if (id) { select(id); ctx.toast('Detected: ' + getEnc(id).label, 'success'); }

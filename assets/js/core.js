@@ -245,15 +245,6 @@ var CK = (function () {
     if (id && id !== _active) activate(id);
   }
 
-  /* Keyboard: dispatch to active tool, with a couple of global shortcuts */
-  function _onKey(e) {
-    var api = _active ? _apis[_active] : null;
-    if ((e.ctrlKey || e.metaKey) && String(e.key).toLowerCase() === 'r') {
-      if (api && typeof api.reset === 'function') { e.preventDefault(); api.reset(); return; }
-    }
-    if (api && typeof api.onKey === 'function') api.onKey(e);
-  }
-
   /* Shell wiring */
   function _wireShell() {
     var themeBtn = document.getElementById('themeBtn');
@@ -279,7 +270,6 @@ var CK = (function () {
     _wireShell();
     activate(currentId() || (_tools[0] && _tools[0].id));
     window.addEventListener('hashchange', _onHash);
-    document.addEventListener('keydown', _onKey);
   }
 
   return {

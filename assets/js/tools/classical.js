@@ -145,8 +145,8 @@
     root.appendChild(cfg);
 
     var io = ui.ioRow();
-    var inP = ui.textPanel({ title: 'PLAINTEXT', icon: I_SCROLL, placeholder: 'Text to encrypt...', primary: { label: 'Encrypt', cls: 'enc', onClick: doEncrypt }, actions: ['copy', 'paste', 'clear', 'download'], downloadName: 'plaintext.txt' });
-    var outP = ui.textPanel({ title: 'CIPHERTEXT', icon: I_LOCK, placeholder: 'Ciphertext, or paste to decrypt...', primary: { label: 'Decrypt', cls: 'dec', onClick: doDecrypt }, actions: ['copy', 'clear', 'download'], downloadName: 'ciphertext.txt' });
+    var inP = ui.textPanel({ title: 'INPUT', icon: I_SCROLL, placeholder: 'Plaintext to encrypt, or ciphertext to decrypt...', primaries: [{ label: 'Encrypt', cls: 'enc', onClick: doEncrypt }, { label: 'Decrypt', cls: 'dec', onClick: doDecrypt }], actions: ['copy', 'paste', 'clear', 'download'], downloadName: 'input.txt' });
+    var outP = ui.textPanel({ title: 'OUTPUT', icon: I_LOCK, placeholder: 'Result appears here...', actions: ['copy', 'paste', 'clear', 'download'], downloadName: 'output.txt' });
     io.appendChild(inP.panel); io.appendChild(outP.panel);
     root.appendChild(io);
 
@@ -159,9 +159,9 @@
       if (c.num) { numField.querySelector('label').textContent = c.num; if (c.numDef != null && !numInput.dataset.touched) numInput.value = c.numDef; }
     }
     numInput.addEventListener('input', function () { numInput.dataset.touched = '1'; });
-    function doEncrypt() { try { var c = get(current); if (!inP.ta.value) throw new Error('Plaintext is empty'); outP.ta.value = c.enc(inP.ta.value, params()); ctx.toast(c.label + ' encrypted', 'success'); } catch (e) { ctx.toast(e.message, 'error'); } }
-    function doDecrypt() { try { var c = get(current); if (!outP.ta.value) throw new Error('Ciphertext is empty'); inP.ta.value = c.dec(outP.ta.value, params()); ctx.toast(c.label + ' decrypted', 'success'); } catch (e) { ctx.toast(e.message, 'error'); } }
-    function doSwap() { var a = inP.ta.value; inP.ta.value = outP.ta.value; outP.ta.value = a; ctx.toast('Panels swapped', 'success'); }
+    function doEncrypt() { try { var c = get(current); if (!inP.ta.value) throw new Error('Input is empty'); outP.ta.value = c.enc(inP.ta.value, params()); ctx.toast(c.label + ' encrypted', 'success'); } catch (e) { ctx.toast(e.message, 'error'); } }
+    function doDecrypt() { try { var c = get(current); if (!inP.ta.value) throw new Error('Input is empty'); outP.ta.value = c.dec(inP.ta.value, params()); ctx.toast(c.label + ' decrypted', 'success'); } catch (e) { ctx.toast(e.message, 'error'); } }
+    function doSwap() { inP.ta.value = outP.ta.value; outP.ta.value = ''; ctx.toast('Output moved to input', 'success'); }
     function doReset() { inP.ta.value = ''; outP.ta.value = ''; keyInput.value = ''; numInput.value = '3'; delete numInput.dataset.touched; select('caesar'); ctx.toast('Reset complete', 'success'); }
 
     select(current);

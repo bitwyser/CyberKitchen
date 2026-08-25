@@ -7,6 +7,13 @@ CK.ui = (function () {
   'use strict';
   var el = CK.el, iconSvg = CK.iconSvg;
 
+  var IC = {
+    copy: '<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/>',
+    paste: '<rect x="8" y="3" width="8" height="4" rx="1"/><path d="M8 5H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>',
+    clear: '<path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13"/>',
+    download: '<path d="M12 3v12M7 10l5 5 5-5M5 21h14"/>'
+  };
+
   function head(label, tag) {
     var h = el('div', { class: 'tool-head' });
     var h1 = el('h1'); h1.textContent = label; h.appendChild(h1);
@@ -97,19 +104,20 @@ CK.ui = (function () {
     if (cfg.placeholder) ta.placeholder = cfg.placeholder;
     if (cfg.readonly) ta.readOnly = true;
     var fire = function () { if (cfg.onInput) cfg.onInput(); };
-    if (cfg.primary) {
-      var p = el('button', { class: 'prim ' + (cfg.primary.cls || '') });
-      p.textContent = cfg.primary.label;
-      p.addEventListener('click', cfg.primary.onClick);
+    var prims = cfg.primaries || (cfg.primary ? [cfg.primary] : []);
+    prims.forEach(function (pr) {
+      var p = el('button', { class: 'prim ' + (pr.cls || '') });
+      p.textContent = pr.label;
+      p.addEventListener('click', pr.onClick);
       tb.appendChild(p);
-    }
+    });
     (cfg.actions || []).forEach(function (a) {
-      if (a === 'copy') tb.appendChild(miniBtn('Copy', function () { CK.copy(ta.value); }));
-      else if (a === 'paste') tb.appendChild(miniBtn('Paste', function () {
+      if (a === 'copy') tb.appendChild(iconBtn(IC.copy, 'Copy', function () { CK.copy(ta.value); }));
+      else if (a === 'paste') tb.appendChild(iconBtn(IC.paste, 'Paste', function () {
         CK.paste().then(function (t) { if (t != null) { ta.value = t; fire(); } });
       }));
-      else if (a === 'clear') tb.appendChild(miniBtn('Clear', function () { ta.value = ''; fire(); }));
-      else if (a === 'download') tb.appendChild(miniBtn('Download', function () {
+      else if (a === 'clear') tb.appendChild(iconBtn(IC.clear, 'Clear', function () { ta.value = ''; fire(); }));
+      else if (a === 'download') tb.appendChild(iconBtn(IC.download, 'Download', function () {
         CK.download(ta.value, cfg.downloadName || 'output.txt');
       }));
     });
