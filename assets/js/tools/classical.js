@@ -119,6 +119,11 @@
   var I_LOCK = '<path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z"/>';
   var I_RESET = '<path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5"/>';
   var I_SWAP = '<path d="M8 3 4 7l4 4M4 7h16M16 21l4-4-4-4M20 17H4"/>';
+  var I_CHECK = '<path d="M20 6 9 17l-5-5"/>';
+  var I_DETECT = '<path d="m12 3 1.9 4.6L18 9l-4.1 1.4L12 15l-1.9-4.6L6 9l4.1-1.4zM19 15l.9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9z"/>';
+  var I_SHARE = '<path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/>';
+  function b64uEnc(str) { var b = new TextEncoder().encode(str), s = ''; b.forEach(function (x) { s += String.fromCharCode(x); }); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
+  function b64uDec(str) { str = str.replace(/-/g, '+').replace(/_/g, '/'); while (str.length % 4) str += '='; var bin = atob(str), a = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i); return new TextDecoder().decode(a); }
 
   CK.registerTool('classical', function (root, ctx) {
     var ui = CK.ui, el = CK.el, current = 'caesar';
@@ -127,28 +132,42 @@
 
     var cfg = ui.configPanel();
     var strip = ui.selStrip(I_SCROLL);
+    strip.acts.appendChild(ui.iconBtn(I_CHECK, 'Verify', doVerify));
+    strip.acts.appendChild(ui.iconBtn(I_DETECT, 'Detect', doDetect));
     strip.acts.appendChild(ui.iconBtn(I_SWAP, 'Swap', doSwap));
+    strip.acts.appendChild(ui.iconBtn(I_SHARE, 'Share', doShare));
     strip.acts.appendChild(ui.iconBtn(I_RESET, 'Reset', doReset));
     cfg.appendChild(strip.strip);
 
-    var form = el('div', { class: 'cfg-form' });
     var keyInput = el('input', { class: 'inp', type: 'text', spellcheck: 'false', autocomplete: 'off' });
     var numInput = el('input', { class: 'inp sm', type: 'number', value: '3' });
-    var keyField = ui.field('Key', keyInput); keyField.style.flex = '1'; keyField.style.minWidth = '220px';
+    var keyField = ui.field('Key', keyInput);
     var numField = ui.field('Shift', numInput);
-    form.appendChild(keyField); form.appendChild(numField);
-    cfg.appendChild(form);
 
     var groups = GROUPS.map(function (g) { return { label: g, items: LIST.filter(function (c) { return c.group === g; }).map(function (c) { return { id: c.id, label: c.label, title: c.desc }; }) }; });
     var pk = ui.picker(groups, select);
-    cfg.appendChild(pk.el);
+    pk.el.classList.add('stacked');
+
+    // Left column: cipher picker. Right column: extra input (content hugging the left).
+    var grid = el('div', { class: 'cfg-grid split-73' });
+    var colL = el('div', { class: 'col' });
+    var colR = el('div', { class: 'col', style: 'align-items:flex-start;' });
+    keyInput.style.width = '180px';
+    colL.appendChild(pk.el);
+    colR.appendChild(keyField); colR.appendChild(numField);
+    grid.appendChild(colL); grid.appendChild(colR);
+    cfg.appendChild(grid);
     root.appendChild(cfg);
 
     var io = ui.ioRow();
-    var inP = ui.textPanel({ title: 'INPUT', icon: I_SCROLL, placeholder: 'Plaintext to encrypt, or ciphertext to decrypt...', primaries: [{ label: 'Encrypt', cls: 'enc', onClick: doEncrypt }, { label: 'Decrypt', cls: 'dec', onClick: doDecrypt }], actions: ['copy', 'paste', 'clear', 'download'], downloadName: 'input.txt' });
+    var inP = ui.textPanel({ title: 'INPUT', icon: I_SCROLL, placeholder: 'Plaintext to encipher, or ciphertext to decipher...', primaries: [{ label: 'Encipher', cls: 'enc', onClick: doEncrypt }, { label: 'Decipher', cls: 'dec', onClick: doDecrypt }], actions: ['copy', 'paste', 'clear', 'download'], downloadName: 'input.txt' });
     var outP = ui.textPanel({ title: 'OUTPUT', icon: I_LOCK, placeholder: 'Result appears here...', actions: ['copy', 'paste', 'clear', 'download'], downloadName: 'output.txt' });
     io.appendChild(inP.panel); io.appendChild(outP.panel);
     root.appendChild(io);
+
+    function clearVerify() { outP.ta.classList.remove('verify-match', 'verify-fail'); }
+    inP.ta.addEventListener('input', clearVerify);
+    outP.ta.addEventListener('input', clearVerify);
 
     function params() { return { key: keyInput.value, num: parseInt(numInput.value, 10) || 0 }; }
     function select(id) {
@@ -159,12 +178,37 @@
       if (c.num) { numField.querySelector('label').textContent = c.num; if (c.numDef != null && !numInput.dataset.touched) numInput.value = c.numDef; }
     }
     numInput.addEventListener('input', function () { numInput.dataset.touched = '1'; });
-    function doEncrypt() { try { var c = get(current); if (!inP.ta.value) throw new Error('Input is empty'); outP.ta.value = c.enc(inP.ta.value, params()); ctx.toast(c.label + ' encrypted', 'success'); } catch (e) { ctx.toast(e.message, 'error'); } }
-    function doDecrypt() { try { var c = get(current); if (!inP.ta.value) throw new Error('Input is empty'); outP.ta.value = c.dec(inP.ta.value, params()); ctx.toast(c.label + ' decrypted', 'success'); } catch (e) { ctx.toast(e.message, 'error'); } }
-    function doSwap() { inP.ta.value = outP.ta.value; outP.ta.value = ''; ctx.toast('Output moved to input', 'success'); }
-    function doReset() { inP.ta.value = ''; outP.ta.value = ''; keyInput.value = ''; numInput.value = '3'; delete numInput.dataset.touched; select('caesar'); ctx.toast('Reset complete', 'success'); }
+    function doEncrypt() { try { var c = get(current); if (!inP.ta.value) throw new Error('Input is empty'); outP.ta.value = c.enc(inP.ta.value, params()); clearVerify(); ctx.toast(c.label + ' enciphered', 'success'); } catch (e) { ctx.toast(e.message, 'error'); } }
+    function doDecrypt() { try { var c = get(current); if (!inP.ta.value) throw new Error('Input is empty'); outP.ta.value = c.dec(inP.ta.value, params()); clearVerify(); ctx.toast(c.label + ' deciphered', 'success'); } catch (e) { ctx.toast(e.message, 'error'); } }
+    function doSwap() { inP.ta.value = outP.ta.value; outP.ta.value = ''; clearVerify(); ctx.toast('Output moved to input', 'success'); }
+    function doVerify() {
+      clearVerify();
+      var c = get(current), a = inP.ta.value, b = outP.ta.value;
+      if (!a || !b) { ctx.toast('Both panels need content', 'warn'); return; }
+      var p = params();
+      function tryE(src) { try { return c.enc(src, p); } catch (e) { return null; } }
+      function tryD(src) { try { return c.dec(src, p); } catch (e) { return null; } }
+      var match = (tryE(a) === b) || (tryD(a) === b) || (tryE(b) === a) || (tryD(b) === a);
+      outP.ta.classList.add(match ? 'verify-match' : 'verify-fail');
+      ctx.toast(match ? 'Match: input and output are a valid pair' : 'No match', match ? 'success' : 'error');
+    }
+    function doDetect() {
+      var s = inP.ta.value.trim();
+      if (!s) { ctx.toast('Enter data in the input first', 'warn'); return; }
+      var clean = s.replace(/\s/g, ''), id = null;
+      if (/^[.\-\/\s]+$/.test(s) && /[.\-]/.test(s)) id = 'morse';
+      else if (/^[ab\s]+$/i.test(s) && clean.length >= 5) id = 'bacon';
+      else if (/^[0-9a-fA-F\s]+$/.test(s) && /[a-fA-F]/.test(s) && clean.length % 2 === 0) id = 'xorkey';
+      else if (/^[1-5\s]+$/.test(s) && clean.length % 2 === 0) id = 'polybius';
+      else if (/^[\d\s\/]+$/.test(s) && /\d/.test(s)) id = 'a1z26';
+      if (id) { select(id); ctx.toast('Guessed cipher: ' + get(id).label + ' (best-effort)', 'success'); }
+      else ctx.toast('Could not detect a cipher (best-effort)', 'warn');
+    }
+    function doShare() { var st = { c: current, k: keyInput.value, n: numInput.value, in: inP.ta.value, out: outP.ta.value }; CK.copy(location.href.split('#')[0] + '#tool=classical&s=' + b64uEnc(JSON.stringify(st))); }
+    function doReset() { inP.ta.value = ''; outP.ta.value = ''; keyInput.value = ''; numInput.value = '3'; delete numInput.dataset.touched; clearVerify(); select('caesar'); ctx.toast('Reset complete', 'success'); }
 
+    var m = /(?:^|[#&])s=([\w-]+)/.exec(location.hash || '');
+    if (m) { try { var st = JSON.parse(b64uDec(m[1])); if (st.c) current = st.c; if (st.k != null) keyInput.value = st.k; if (st.n != null) { numInput.value = st.n; numInput.dataset.touched = '1'; } if (st.in != null) inP.ta.value = st.in; if (st.out != null) outP.ta.value = st.out; } catch (e) { } }
     select(current);
-    return { reset: doReset, onKey: function (e) { if (!(e.ctrlKey || e.metaKey)) return; var k = String(e.key).toLowerCase(); if (k === 'e') { e.preventDefault(); doEncrypt(); } else if (k === 'd') { e.preventDefault(); doDecrypt(); } } };
   });
 })();
