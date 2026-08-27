@@ -70,8 +70,8 @@
 
     var cfg = ui.configPanel();
     var strip = ui.selStrip(I_HASH);
-    strip.acts.appendChild(ui.iconBtn(I_CHECK, 'Verify', doVerify));
     strip.acts.appendChild(ui.iconBtn(I_DETECT, 'Detect', doDetect));
+    strip.acts.appendChild(ui.iconBtn(I_CHECK, 'Verify', doVerify));
     strip.acts.appendChild(ui.iconBtn(I_SWAP, 'Swap', doSwap));
     strip.acts.appendChild(ui.iconBtn(I_SHARE, 'Share', doShare));
     strip.acts.appendChild(ui.iconBtn(I_RESET, 'Reset', doReset));

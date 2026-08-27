@@ -155,8 +155,7 @@ var CK = (function () {
       inCat.forEach(function (t) {
         var btn = el('button', { class: 'item', 'data-id': t.id, title: t.label });
         btn.innerHTML = iconSvg(t.icon) +
-          '<span class="nm">' + t.label + '</span>' +
-          (t.tag ? '<span class="tag">' + t.tag + '</span>' : '');
+          '<span class="nm">' + t.label + '</span>';
         btn.addEventListener('click', function () {
           navigate(t.id);
           document.body.classList.remove('drawer-open');
@@ -188,7 +187,7 @@ var CK = (function () {
 
   function _renderPlaceholder(root, tool) {
     var head = el('div', { class: 'tool-head' });
-    head.innerHTML = '<h1>' + tool.label + '</h1>' + (tool.tag ? '<span class="pill">' + tool.tag + '</span>' : '');
+    head.innerHTML = '<h1>' + tool.label + '</h1>';
     var panel = el('div', { class: 'panel' });
     var ph = el('div', { class: 'ph' });
     ph.innerHTML =

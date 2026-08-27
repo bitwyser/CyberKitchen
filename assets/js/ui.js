@@ -14,10 +14,9 @@ CK.ui = (function () {
     download: '<path d="M12 3v12M7 10l5 5 5-5M5 21h14"/>'
   };
 
-  function head(label, tag) {
+  function head(label) {
     var h = el('div', { class: 'tool-head' });
     var h1 = el('h1'); h1.textContent = label; h.appendChild(h1);
-    if (tag != null) { var p = el('span', { class: 'pill' }); p.textContent = tag; h.appendChild(p); }
     return h;
   }
 

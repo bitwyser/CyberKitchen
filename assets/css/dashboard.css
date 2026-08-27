@@ -51,7 +51,7 @@ header{
 .hamb{display:none;}
 
 /* Shell */
-.shell{flex:1; display:grid; grid-template-columns:212px 1fr; min-height:0;}
+.shell{flex:1; display:grid; grid-template-columns:190px 1fr; min-height:0;}
 
 /* Rail */
 nav{
