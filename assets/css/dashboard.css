@@ -173,7 +173,8 @@ main{padding:12px 14px; overflow:hidden; display:flex; flex-direction:column; mi
 /* Stacked picker: subtype label above its ciphers (vertical) */
 .picker.stacked{display:block; padding:2px 0;}
 .picker.stacked .pk-label{text-align:left; padding:9px 2px 4px;}
-.picker.stacked .pk-grid{margin-bottom:2px;}
+.picker.stacked .pk-grid{display:flex; flex-wrap:wrap; gap:5px; margin-bottom:2px;}
+.picker.stacked .eb{padding:4px 12px;}
 .eb{
   padding:3px 7px; border:1px solid var(--bdr); border-radius:6px; background:var(--inset); color:var(--muted);
   font-size:10.5px; font-weight:600; cursor:pointer; transition:.12s; text-align:center;

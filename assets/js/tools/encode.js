@@ -240,8 +240,8 @@
     var cfg = ui.configPanel();
     var strip = ui.selStrip(I_CODE);
     strip.acts.appendChild(ui.iconBtn(I_CHECK, 'Verify', doVerify));
-    strip.acts.appendChild(ui.iconBtn(I_SWAP, 'Swap', doSwap));
     strip.acts.appendChild(ui.iconBtn(I_DETECT, 'Detect', doDetect));
+    strip.acts.appendChild(ui.iconBtn(I_SWAP, 'Swap', doSwap));
     strip.acts.appendChild(ui.iconBtn(I_SHARE, 'Share', doShare));
     strip.acts.appendChild(ui.iconBtn(I_RESET, 'Reset', doReset));
     cfg.appendChild(strip.strip);
@@ -250,7 +250,10 @@
       return { label: g, items: LIST.filter(function (e) { return e.group === g; }).map(function (e) { return { id: e.id, label: e.label, title: e.desc }; }) };
     });
     var pk = ui.picker(groups, select);
-    cfg.appendChild(pk.el);
+    pk.el.classList.add('stacked');
+    var pkGrid = CK.el('div', { class: 'cfg-grid', style: 'grid-template-columns:1fr;' });
+    pkGrid.appendChild(pk.el);
+    cfg.appendChild(pkGrid);
     root.appendChild(cfg);
 
     var io = ui.ioRow();
