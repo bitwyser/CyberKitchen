@@ -104,26 +104,52 @@ CK.ui = (function () {
     if (cfg.readonly) ta.readOnly = true;
     var fire = function () { if (cfg.onInput) cfg.onInput(); };
     var prims = cfg.primaries || (cfg.primary ? [cfg.primary] : []);
+    var primBtns = [], busy = false;
+    function clearBusy() { busy = false; applyGate(); }
     prims.forEach(function (pr) {
       var p = el('button', { class: 'prim ' + (pr.cls || '') });
       p.textContent = pr.label;
-      p.addEventListener('click', pr.onClick);
-      tb.appendChild(p);
+      p.addEventListener('click', function () {
+        if (busy) return;
+        var r = pr.onClick();
+        // If the handler is async (returns a promise), lock the primaries until it settles
+        if (r && typeof r.then === 'function') { busy = true; applyGate(); r.then(clearBusy, clearBusy); }
+      });
+      primBtns.push(p); tb.appendChild(p);
     });
+    var gated = []; // buttons that need content: locked until the panel has some
     (cfg.actions || []).forEach(function (a) {
-      if (a === 'copy') tb.appendChild(iconBtn(IC.copy, 'Copy', function () { CK.copy(ta.value); }));
+      if (a === 'copy') { var cpB = iconBtn(IC.copy, 'Copy', function () { CK.copy(ta.value); }); gated.push(cpB); tb.appendChild(cpB); }
       else if (a === 'paste') tb.appendChild(iconBtn(IC.paste, 'Paste', function () {
         CK.paste().then(function (t) { if (t != null) { ta.value = t; fire(); } });
       }));
       else if (a === 'clear') tb.appendChild(iconBtn(IC.clear, 'Clear', function () { ta.value = ''; fire(); }));
-      else if (a === 'download') tb.appendChild(iconBtn(IC.download, 'Download', function () {
-        CK.download(ta.value, cfg.downloadName || 'output.txt');
-      }));
+      else if (a === 'download') { var dlB = iconBtn(IC.download, 'Download', function () { CK.download(ta.value, cfg.downloadName || 'output.txt'); }); gated.push(dlB); tb.appendChild(dlB); }
     });
     hdr.appendChild(fill); hdr.appendChild(tb);
-    panel.appendChild(hdr); panel.appendChild(ta);
+    var count = el('span', { class: 'char-count' });
+    panel.appendChild(hdr); panel.appendChild(ta); panel.appendChild(count);
+    var contentSubs = []; // notified on any content change (typed or programmatic)
+    function applyGate() {
+      var empty = ta.value.length === 0;
+      for (var i = 0; i < gated.length; i++) gated[i].disabled = empty;
+      // Primaries lock while an async op is pending, and (for input panels) while there is no input.
+      // Generators have a read-only panel, so only the busy state locks their Generate button.
+      for (var j = 0; j < primBtns.length; j++) primBtns[j].disabled = busy || (!cfg.readonly && empty);
+    }
+    function updateCount() {
+      var n = ta.value.length;
+      count.textContent = n.toLocaleString() + (n === 1 ? ' char' : ' chars');
+      applyGate();
+      for (var s = 0; s < contentSubs.length; s++) contentSubs[s]();
+    }
+    ta.addEventListener('input', updateCount);
+    // Keep the count in sync when a tool assigns ta.value programmatically
+    var vd = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value');
+    Object.defineProperty(ta, 'value', { configurable: true, get: function () { return vd.get.call(ta); }, set: function (v) { vd.set.call(ta, v); updateCount(); } });
     if (cfg.onInput) ta.addEventListener('input', cfg.onInput);
-    return { panel: panel, ta: ta };
+    updateCount();
+    return { panel: panel, ta: ta, onContent: function (fn) { contentSubs.push(fn); } };
   }
 
   function ioRow(oneCol) { return el('div', { class: 'io' + (oneCol ? ' io-1col' : '') }); }
@@ -150,11 +176,11 @@ CK.ui = (function () {
     return s;
   }
 
-  /* A checkbox toggle row; onChange(checked) */
+  /* A labelled toggle switch; onChange(checked) */
   function toggle(labelText, checked, onChange) {
-    var wrap = el('label', { class: 'toggle-row' });
+    var wrap = el('label', { class: 'switch' });
     var cb = el('input', { type: 'checkbox' }); cb.checked = !!checked;
-    wrap.appendChild(cb); wrap.appendChild(document.createTextNode(labelText));
+    wrap.appendChild(cb); wrap.appendChild(el('span', { class: 'track' })); wrap.appendChild(el('span', {}, labelText));
     if (onChange) cb.addEventListener('change', function () { onChange(cb.checked); });
     return { wrap: wrap, cb: cb };
   }

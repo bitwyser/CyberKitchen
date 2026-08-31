@@ -2,7 +2,7 @@
   "name": "CyberKitchen - Recipes for Hackers",
   "short_name": "CyberKitchen",
   "description": "Offline browser toolkit for encryption, hashing, encoding, conversion and generators.",
-  "start_url": "dashboard.html",
+  "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "background_color": "#0d1117",

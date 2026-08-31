@@ -262,7 +262,7 @@
     io.appendChild(inP.panel); io.appendChild(outP.panel);
     root.appendChild(io);
 
-    function clearVerify() { outP.ta.classList.remove('verify-match', 'verify-fail'); }
+    function clearVerify() { outP.ta.classList.remove('verify-match', 'verify-fail'); inP.ta.classList.remove('verify-match', 'verify-fail'); }
     function select(id) { var e = getEnc(id); if (!e) return; current = id; pk.setActive(id); ui.setSel(strip, e.label, e.badge, e.desc); clearVerify(); }
     function doEncode() { try { var e = getEnc(current); if (!inP.ta.value) throw new Error('Input is empty'); outP.ta.value = e.enc(inP.ta.value); clearVerify(); ctx.toast(e.label + ' encoded', 'success'); } catch (err) { ctx.toast(err.message, 'error'); } }
     function doDecode() { try { var e = getEnc(current); if (!inP.ta.value) throw new Error('Input is empty'); outP.ta.value = e.dec(inP.ta.value); clearVerify(); ctx.toast(e.label + ' decoded', 'success'); } catch (err) { ctx.toast(err.message, 'error'); } }
@@ -273,7 +273,7 @@
         if (!left || !right) throw new Error('Both panels need content');
         var e = getEnc(current), match = (e.enc(left).trim() === right);
         if (!match) { try { match = (e.dec(right).trim() === left); } catch (x) { } }
-        clearVerify(); outP.ta.classList.add(match ? 'verify-match' : 'verify-fail');
+        clearVerify(); CK.flashVerify(match, inP.ta, outP.ta);
         ctx.toast(match ? 'Match: panels are equivalent' : 'No match', match ? 'success' : 'error');
       } catch (err) { ctx.toast(err.message, 'error'); }
     }

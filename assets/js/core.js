@@ -42,7 +42,7 @@ var CK = (function () {
   /* Theme */
   var theme = {
     load: function () {
-      var t = store.get('theme', 'light');
+      var t = store.get('theme', 'dark');
       document.documentElement.setAttribute('data-theme', t);
       this._icon(t);
     },
@@ -271,10 +271,51 @@ var CK = (function () {
     window.addEventListener('hashchange', _onHash);
   }
 
+  // Rough password strength: 6-point score to a labelled, colour-coded rating
+  function pwStrength(pw) {
+    var s = 0;
+    if (pw.length >= 8) s++; if (pw.length >= 12) s++;
+    if (/[A-Z]/.test(pw)) s++; if (/[a-z]/.test(pw)) s++;
+    if (/[0-9]/.test(pw)) s++; if (/[^A-Za-z0-9]/.test(pw)) s++;
+    var i = Math.min(s, 6);
+    return { label: ['Too short', 'Weak', 'Fair', 'Good', 'Strong', 'Very strong', 'Excellent'][i], cls: ['err', 'err', 'warn', 'warn', 'ok', 'ok', 'ok'][i] };
+  }
+  // Attach a live strength pill to a text panel's input, sitting just left of the char-count
+  function attachStrength(panelObj) {
+    var panel = panelObj.panel, ta = panelObj.ta;
+    var badge = el('span', { class: 'pw-strength' });
+    panel.appendChild(badge);
+    var cc = panel.querySelector('.char-count');
+    function update() {
+      var pw = ta.value;
+      if (!pw) { badge.style.display = 'none'; return; }
+      badge.style.display = '';
+      var r = pwStrength(pw);
+      badge.textContent = r.label;
+      badge.className = 'pw-strength ' + r.cls;
+      badge.style.right = (23 + (cc ? cc.offsetWidth : 0) + 8) + 'px';
+    }
+    if (panelObj.onContent) panelObj.onContent(update); else ta.addEventListener('input', update);
+    update();
+    return update;
+  }
+
+  // Flash a pass/fail highlight on one or more textareas, auto-clearing after 5s
+  function flashVerify(match) {
+    var els = Array.prototype.slice.call(arguments, 1).filter(Boolean);
+    els.forEach(function (t) {
+      clearTimeout(t._vfTimer);
+      t.classList.remove('verify-match', 'verify-fail');
+      t.classList.add(match ? 'verify-match' : 'verify-fail');
+      t._vfTimer = setTimeout(function () { t.classList.remove('verify-match', 'verify-fail'); }, 5000);
+    });
+  }
+
   return {
     boot: boot, defineTools: defineTools, registerTool: registerTool,
     navigate: navigate, getTool: getTool,
     theme: theme, toast: toast, copy: copy, paste: paste, download: download,
-    store: store, el: el, iconSvg: iconSvg, $: $
+    store: store, el: el, iconSvg: iconSvg, $: $, flashVerify: flashVerify,
+    pwStrength: pwStrength, attachStrength: attachStrength
   };
 })();

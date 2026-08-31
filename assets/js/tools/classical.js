@@ -165,7 +165,7 @@
     io.appendChild(inP.panel); io.appendChild(outP.panel);
     root.appendChild(io);
 
-    function clearVerify() { outP.ta.classList.remove('verify-match', 'verify-fail'); }
+    function clearVerify() { outP.ta.classList.remove('verify-match', 'verify-fail'); inP.ta.classList.remove('verify-match', 'verify-fail'); }
     inP.ta.addEventListener('input', clearVerify);
     outP.ta.addEventListener('input', clearVerify);
 
@@ -189,7 +189,7 @@
       function tryE(src) { try { return c.enc(src, p); } catch (e) { return null; } }
       function tryD(src) { try { return c.dec(src, p); } catch (e) { return null; } }
       var match = (tryE(a) === b) || (tryD(a) === b) || (tryE(b) === a) || (tryD(b) === a);
-      outP.ta.classList.add(match ? 'verify-match' : 'verify-fail');
+      CK.flashVerify(match, inP.ta, outP.ta);
       ctx.toast(match ? 'Match: input and output are a valid pair' : 'No match', match ? 'success' : 'error');
     }
     function doDetect() {

@@ -9,6 +9,19 @@
   function b64uEnc(str) { var b = new TextEncoder().encode(str), s = ''; b.forEach(function (x) { s += String.fromCharCode(x); }); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
   function b64uDec(str) { str = str.replace(/-/g, '+').replace(/_/g, '/'); while (str.length % 4) str += '='; var bin = atob(str), a = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i); return new TextDecoder().decode(a); }
   function parseBcrypt(h) { var m = /^\$(2[abxy]?)\$(\d{2})\$([./A-Za-z0-9]{53})$/.exec(h); if (!m) return null; return { version: m[1], cost: parseInt(m[2], 10), salt: m[3].slice(0, 22), hashPart: m[3].slice(22) }; }
+  // Per-cost guidance and rough in-browser timing (carried over from the standalone bcrypt tool)
+  function costGuide(n) {
+    var ms = 20 * Math.pow(2, n - 8);
+    var time = ms < 1000 ? Math.round(ms) + ' ms' : (ms / 1000).toFixed(ms < 10000 ? 1 : 0) + ' s';
+    var desc = n <= 8 ? 'very fast, for development and testing only'
+      : n <= 10 ? 'fast, a sensible minimum for production'
+      : n === 11 ? 'a good balance of speed and security'
+      : n === 12 ? 'recommended for most production apps'
+      : n === 13 ? 'slow, for high-security contexts'
+      : n === 14 ? 'very slow, use with caution in the browser'
+      : 'extremely slow, for specialized use only';
+    return { time: '~' + time, desc: desc };
+  }
 
   var I_FISH = '<path d="M6.5 12c3-5 8-5 11 0-3 5-8 5-11 0zM15 11.5v.01"/>';
   var I_HASH = '<path d="M4 9h16M4 15h16M10 3 8 21M16 3l-2 18"/>';
@@ -19,7 +32,7 @@
   var I_SHARE = '<path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/>';
   var I_RESET = '<path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5"/>';
   var I_SHUF = '<path d="M18 4l3 3-3 3M21 7H8a4 4 0 0 0-4 4M6 20l-3-3 3-3M3 17h12a4 4 0 0 0 4-4"/>';
-  var COSTS = [10, 12, 14];
+  var COSTS = [8, 10, 12, 14, 16];
 
   CK.registerTool('bcrypt', function (root, ctx) {
     var ui = CK.ui, el = CK.el, cost = 10;
@@ -29,6 +42,7 @@
 
     var cfg = ui.configPanel();
     var strip = ui.selStrip(I_FISH);
+    strip.desc.style.whiteSpace = 'normal'; // let the full cost guidance wrap instead of truncating
     strip.acts.appendChild(ui.iconBtn(I_DETECT, 'Detect', doDetect));
     strip.acts.appendChild(ui.iconBtn(I_CHECK, 'Verify', doVerify));
     strip.acts.appendChild(ui.iconBtn(I_SWAP, 'Swap', doSwap));
@@ -41,7 +55,7 @@
     var colL = el('div', { class: 'bc-left' });
     var colR = el('div', { class: 'col' });
 
-    // Cost: 3 presets + custom input, all on one line
+    // Cost: 5 presets + custom input, all on one line
     var costBtns = {}, costRow = el('div', { style: 'display:flex; gap:5px; align-items:center;' });
     COSTS.forEach(function (v) {
       var b = el('button', { class: 'eb' }); b.textContent = v;
@@ -82,12 +96,13 @@
     var outP = ui.textPanel({ title: 'BCRYPT HASH', icon: I_HASH, placeholder: 'Hash output, or paste a $2 hash to verify...', primaries: [{ label: 'Inspect', cls: 'dec', onClick: doInspect }], actions: ['copy', 'paste', 'clear', 'download'], downloadName: 'bcrypt.txt' });
     io.appendChild(inP.panel); io.appendChild(outP.panel);
     root.appendChild(io);
+    CK.attachStrength(inP);
 
-    function clearV() { outP.ta.classList.remove('verify-match', 'verify-fail'); }
+    function clearV() { outP.ta.classList.remove('verify-match', 'verify-fail'); inP.ta.classList.remove('verify-match', 'verify-fail'); }
     inP.ta.addEventListener('input', clearV);
     outP.ta.addEventListener('input', clearV);
     function markCost() { COSTS.forEach(function (v) { costBtns[v].classList.toggle('active', cost === v && custInput.value === ''); }); }
-    function updateSel() { ui.setSel(strip, 'bcrypt cost ' + cost, '2^' + cost, 'Blowfish-based hashing, ' + Math.pow(2, cost).toLocaleString() + ' iterations'); }
+    function updateSel() { var g = costGuide(cost); ui.setSel(strip, 'bcrypt cost ' + cost, '2^' + cost, 'Blowfish-based hashing · ' + Math.pow(2, cost).toLocaleString() + ' iterations · ' + g.desc + ' · ' + g.time); }
     function formatOut(hash) {
       if (outSel.value === 'hashonly') return hash.slice(-31);
       if (outSel.value === 'json') { var p = parseBcrypt(hash) || {}; return JSON.stringify({ algorithm: 'bcrypt', version: '$' + (p.version || ''), cost: p.cost, salt: p.salt, hash: p.hashPart, full: hash }, null, 2); }
@@ -107,14 +122,16 @@
         var salt = saltInput.value.trim();
         if (!/^\$2[abxy]?\$\d{2}\$[./A-Za-z0-9]{22}/.test(salt)) { ctx.toast('Custom salt must look like $2a$10$ + 22 chars', 'error'); return; }
         try { done(null, b.hashSync(pw, salt)); } catch (e) { done(e); }
-      } else { b.hash(pw, cost, done); }
+        return;
+      }
+      return new Promise(function (resolve) { b.hash(pw, cost, function (err, hash) { done(err, hash); resolve(); }); });
     }
     function doVerify() {
       var b = lib(); if (!b) { ctx.toast('bcrypt library not loaded', 'error'); return; }
       var pw = inP.ta.value, hash = outP.ta.value.trim();
       if (!pw) { ctx.toast('Enter the password on the left', 'warn'); return; }
       if (!/^\$2[abxy]?\$/.test(hash)) { ctx.toast('Output is not a full bcrypt hash', 'error'); return; }
-      b.compare(pw, hash, function (err, ok) { if (err) { ctx.toast('Verify failed: ' + err.message, 'error'); return; } clearV(); outP.ta.classList.add(ok ? 'verify-match' : 'verify-fail'); ctx.toast(ok ? 'Match: password is correct' : 'No match', ok ? 'success' : 'error'); });
+      b.compare(pw, hash, function (err, ok) { if (err) { ctx.toast('Verify failed: ' + err.message, 'error'); return; } clearV(); CK.flashVerify(ok, inP.ta, outP.ta); ctx.toast(ok ? 'Match: password is correct' : 'No match', ok ? 'success' : 'error'); });
     }
     function doDetect() {
       var p = parseBcrypt(outP.ta.value.trim());

@@ -1,340 +1,85 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CyberKitchen - Recipes for Hackers</title>
-  <link rel="stylesheet"
-    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
-    onerror="this.onerror=null;this.href='https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/all.min.css'">
-  <style>
-    :root {
-      --bg:#f8fafc; --surf:#ffffff; --inset:#f1f5f9; --inset2:#e4eaf1;
-      --txt:#0f172a; --muted:#64748b; --acc:#3b82f6;
-      --ok:#10b981; --err:#ef4444; --warn:#f59e0b;
-      --bdr:#e2e8f0; --shd:rgba(0,0,0,.07);
-    }
-    [data-theme="dark"] {
-      --bg:#0d1117; --surf:#161b22; --inset:#21262d; --inset2:#2d333b;
-      --txt:#e6edf3; --muted:#8b949e; --bdr:#30363d; --shd:rgba(0,0,0,.4);
-    }
-    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
-    html { overflow-x:hidden; }
-    body {
-      font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
-      font-size:14.5px; background:var(--bg); color:var(--txt);
-      min-height:100vh; line-height:1.5; display:flex; flex-direction:column;
-      transition:background .25s,color .25s;
-    }
-
-    /* ── Header ─────────────────────────────────────────────── */
-    header {
-      display:grid; grid-template-columns:1fr auto 1fr;
-      align-items:center; padding:14px 24px; border-bottom:1px solid var(--bdr);
-      background:var(--surf); position:sticky; top:0; z-index:10;
-    }
-    .brand {
-      display:flex; align-items:center; gap:10px;
-      font-size:18px; font-weight:800; letter-spacing:-.3px;
-      background:linear-gradient(130deg,#3b82f6,#8b5cf6);
-      -webkit-background-clip:text; -webkit-text-fill-color:transparent;
-      background-clip:text; text-decoration:none; width:fit-content;
-    }
-    .brand i { font-size:18px; -webkit-text-fill-color:#8b5cf6; }
-    .hdr-right { display:flex; align-items:center; justify-content:flex-end; }
-    .icon-btn {
-      width:34px; height:34px; border-radius:8px; background:var(--inset);
-      border:1px solid var(--bdr); cursor:pointer; display:flex; align-items:center;
-      justify-content:center; color:var(--muted); font-size:14px; transition:all .2s;
-    }
-    .icon-btn:hover { border-color:var(--acc); color:var(--acc); transform:scale(1.08); }
-
-    /* ── Hero ───────────────────────────────────────────────── */
-    .hero {
-      text-align:center; padding:52px 24px 40px;
-      max-width:800px; margin:0 auto;
-    }
-    .hero h1 {
-      font-size:36px; font-weight:800; letter-spacing:-.5px; line-height:1.2;
-      background:linear-gradient(130deg,#3b82f6 0%,#8b5cf6 60%,#ec4899 100%);
-      -webkit-background-clip:text; -webkit-text-fill-color:transparent;
-      background-clip:text; margin-bottom:12px;
-    }
-    .hero-sub {
-      color:var(--muted); font-size:15px; line-height:1.65;
-      max-width:620px; margin:0 auto;
-    }
-
-    /* ── Main grid ──────────────────────────────────────────── */
-    main {
-      flex:1;
-      max-width:1200px; margin:0 auto;
-      padding:0 24px 60px;
-      display:grid;
-      grid-template-columns:repeat(auto-fill, minmax(260px, 1fr));
-      gap:16px;
-    }
-
-    /* ── Category card ──────────────────────────────────────── */
-    .card {
-      background:var(--surf); border:1px solid var(--bdr); border-radius:12px;
-      padding:20px; box-shadow:0 1px 4px var(--shd);
-      display:flex; flex-direction:column; gap:14px;
-      transition:border-color .18s, box-shadow .18s;
-    }
-    .card:hover { border-color:var(--acc); box-shadow:0 4px 16px var(--shd); }
-    .card-header { display:flex; align-items:center; gap:10px; }
-    .card-icon {
-      width:36px; height:36px; border-radius:8px;
-      display:flex; align-items:center; justify-content:center;
-      font-size:16px; flex-shrink:0;
-    }
-    .card-title { font-size:15px; font-weight:700; }
-    .card-desc  { font-size:12px; color:var(--muted); line-height:1.5; }
-
-    /* ── Tool links ─────────────────────────────────────────── */
-    .tool-list { display:flex; flex-direction:column; gap:4px; }
-    .tool-link {
-      display:flex; align-items:center; gap:8px;
-      padding:7px 10px; border-radius:7px;
-      text-decoration:none; color:var(--txt);
-      font-size:13px; font-weight:500;
-      transition:all .15s; border:1px solid transparent;
-    }
-    .tool-link:hover { background:var(--inset); border-color:var(--bdr); color:var(--acc); }
-    .tool-link i { font-size:12px; color:var(--muted); flex-shrink:0; width:14px; text-align:center; }
-    .tool-link:hover i { color:var(--acc); }
-    .tool-tag {
-      margin-left:auto; font-size:10px; font-weight:700; padding:1px 6px;
-      border-radius:4px; background:var(--inset2); color:var(--muted); flex-shrink:0;
-    }
-
-    /* ── Category colour accents ────────────────────────────── */
-    .cat-crypto .card-icon { background:rgba(59,130,246,.12); color:#3b82f6; }
-    .cat-hash   .card-icon { background:rgba(16,185,129,.12); color:#10b981; }
-    .cat-encode .card-icon { background:rgba(245,158,11,.12); color:#f59e0b; }
-    .cat-cipher .card-icon { background:rgba(139,92,246,.12); color:#8b5cf6; }
-    .cat-convert .card-icon { background:rgba(6,182,212,.12); color:#06b6d4; }
-    .cat-gen    .card-icon { background:rgba(236,72,153,.12); color:#ec4899; }
-
-    .cat-crypto  { --card-acc:#3b82f6; }
-    .cat-hash    { --card-acc:#10b981; }
-    .cat-encode  { --card-acc:#f59e0b; }
-    .cat-cipher  { --card-acc:#8b5cf6; }
-    .cat-convert { --card-acc:#06b6d4; }
-    .cat-gen     { --card-acc:#ec4899; }
-    .card:hover .card-title { color:var(--card-acc, var(--acc)); }
-
-    /* ── Footer ─────────────────────────────────────────────── */
-    footer {
-      border-top:1px solid var(--bdr);
-      background:var(--surf);
-      padding:18px 24px;
-    }
-    .footer-inner {
-      max-width:1200px; margin:0 auto;
-      display:flex; align-items:center; justify-content:space-between;
-      gap:12px;
-    }
-    .footer-left {
-      font-size:13px; font-weight:700; color:var(--muted);
-      letter-spacing:-.1px;
-    }
-    .footer-center {
-      font-size:12px; color:var(--muted);
-    }
-    .footer-right {
-      display:flex; align-items:center;
-    }
-    .footer-gh {
-      display:inline-flex; align-items:center; gap:6px;
-      font-size:13px; font-weight:500; color:var(--muted);
-      text-decoration:none; transition:color .15s;
-    }
-    .footer-gh i { font-size:14px; }
-    .footer-gh:hover { color:var(--txt); }
-
-    @media (max-width:540px) {
-      .footer-inner { flex-direction:column; align-items:center; gap:6px; text-align:center; }
-    }
-
-    /* ── Responsive ─────────────────────────────────────────── */
-    @media (max-width:640px) {
-      header { padding:12px 16px; }
-      .hero  { padding:36px 16px 28px; }
-      .hero h1 { font-size:26px; }
-      main  { padding:0 16px 40px; grid-template-columns:1fr; }
-    }
-  </style>
+  <meta name="description" content="Offline browser toolkit for encryption, hashing, encoding, conversion and generators.">
+  <meta name="theme-color" content="#3b82f6">
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="assets/icon.svg">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="assets/css/dashboard.css">
 </head>
 <body>
 
   <header>
-    <a href="/CyberKitchen" class="brand">
-      <i class="fa-solid fa-kitchen-set"></i>
+    <button class="icon-btn hamb" id="hamburger" title="Menu" aria-label="Open menu">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+    </button>
+    <a class="brand" href="./">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3v6M12 3v6M6 3v6a3 3 0 0 0 6 0M9 9v12M4 21h16M18 3c-1.5 0-3 2-3 5s1.5 4 3 4v9"/></svg>
       CyberKitchen
     </a>
-    <div></div>
-    <div class="hdr-right">
-      <button class="icon-btn" onclick="toggleTheme()" title="Toggle theme">
-        <i class="fa-solid fa-moon" id="themeIcon"></i>
-      </button>
-    </div>
+    <span class="dot"></span>
+    <span class="sub">Recipes for Hackers</span>
+    <div class="spacer"></div>
+    <button class="icon-btn" id="themeBtn" title="Toggle theme" aria-label="Toggle theme"><span id="themeIcon"></span></button>
   </header>
 
-  <div class="hero">
-    <h1>Recipes for Hackers</h1>
-    <p class="hero-sub">A browser-based suite for encryption, hashing, encoding, conversion, and more. All processing happens locally - no data ever leaves your machine.</p>
+  <div class="shell">
+    <nav>
+      <div class="nav-scroll" id="railScroll"></div>
+      <button class="nav-toggle" id="collapseBtn" title="Collapse sidebar">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></svg>
+        <span class="ntxt">Collapse</span>
+      </button>
+    </nav>
+
+    <div class="nav-backdrop" id="backdrop"></div>
+
+    <main id="main"></main>
   </div>
 
-  <main>
+  <script src="assets/js/core.js"></script>
+  <script src="assets/js/ui.js"></script>
+  <script src="assets/js/vendor/hashlib.js"></script>
+  <script src="assets/js/vendor/crypto-js.min.js"></script>
+  <script src="assets/js/vendor/bcrypt.min.js"></script>
+  <script src="assets/js/vendor/argon2-bundled.min.js"></script>
+  <script src="assets/js/tools/encode.js"></script>
+  <script src="assets/js/tools/number.js"></script>
+  <script src="assets/js/tools/classical.js"></script>
+  <script src="assets/js/tools/password.js"></script>
+  <script src="assets/js/tools/fakedata.js"></script>
+  <script src="assets/js/tools/hash.js"></script>
+  <script src="assets/js/tools/aes.js"></script>
+  <script src="assets/js/tools/rsa.js"></script>
+  <script src="assets/js/tools/bcrypt.js"></script>
+  <script src="assets/js/tools/argon2.js"></script>
+  <script>
+    /* Tool manifest. Icons are inner SVG paths (rendered by CK.iconSvg).
+       Each tool's logic is registered later via CK.registerTool(id, fn). */
+    CK.defineTools([
+      { id:'aes',       label:'AES',                category:'Encryption', tag:'AES',  icon:'<circle cx="8" cy="15" r="4"/><path d="M10.8 12.2 20 3M17 6l3 0 0 3M14 9l2 2"/>' },
+      { id:'rsa',       label:'RSA',                category:'Encryption', tag:'RSA',  icon:'<path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z"/>' },
+      { id:'classical', label:'Classical Ciphers',  category:'Encryption', tag:'27',   icon:'<path d="M4 7V5h16v2M9 20h6M12 5v15"/>' },
+      { id:'hash',      label:'Cryptographic',      category:'Hashing',    tag:'SHA3', icon:'<path d="M4 9h16M4 15h16M10 3 8 21M16 3l-2 18"/>' },
+      { id:'bcrypt',    label:'Bcrypt',             category:'Hashing',    tag:'bc',   icon:'<path d="M6.5 12c3-5 8-5 11 0-3 5-8 5-11 0zM15 11.5v.01"/>' },
+      { id:'argon2',    label:'Argon2',             category:'Hashing',    tag:'a2',   icon:'<path d="M12 3c3 4 5 6.5 5 10a5 5 0 0 1-10 0c0-3.5 2-6 5-10z"/>' },
+      { id:'encode',    label:'Encoder / Decoder',  category:'Encoding',   tag:'26',   icon:'<path d="M7 7 3 12l4 5M17 7l4 5-4 5M14 4l-4 16"/>' },
+      { id:'number',    label:'Number Converter',   category:'Encoding',   tag:'hex',  icon:'<path d="M6 4v16M6 4h4a3 3 0 0 1 0 6H6M14 4h4v6h-4zM14 14h4v6h-4z"/>' },
+      { id:'password',  label:'Password Generator', category:'Generators', tag:'pw',   icon:'<rect x="4" y="4" width="16" height="16" rx="3"/><circle cx="9" cy="9" r="1.2"/><circle cx="15" cy="15" r="1.2"/><circle cx="15" cy="9" r="1.2"/><circle cx="9" cy="15" r="1.2"/>' },
+      { id:'fakedata',  label:'Fake Data',          category:'Generators', tag:'fkr',  icon:'<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/>' }
+    ], ['Encryption','Hashing','Encoding','Generators']);
 
-    <!-- Cryptography -->
-    <div class="card cat-crypto">
-      <div class="card-header">
-        <div class="card-icon cat-crypto"><i class="fa-solid fa-lock"></i></div>
-        <div>
-          <div class="card-title">Cryptography</div>
-          <div class="card-desc">Symmetric &amp; asymmetric encryption</div>
-        </div>
-      </div>
-      <div class="tool-list">
-        <a href="tools/crypto/aes/" class="tool-link">
-          <i class="fa-solid fa-key"></i> AES Encrypt / Decrypt
-          <span class="tool-tag">AES</span>
-        </a>
-        <a href="tools/crypto/rsa/" class="tool-link">
-          <i class="fa-solid fa-shield-halved"></i> RSA Encrypt / Decrypt
-          <span class="tool-tag">RSA</span>
-        </a>
-      </div>
-    </div>
+    CK.boot();
 
-    <!-- Classical Ciphers -->
-    <div class="card cat-cipher">
-      <div class="card-header">
-        <div class="card-icon cat-cipher"><i class="fa-solid fa-scroll"></i></div>
-        <div>
-          <div class="card-title">Classical Ciphers</div>
-          <div class="card-desc">Historical &amp; substitution ciphers</div>
-        </div>
-      </div>
-      <div class="tool-list">
-        <a href="tools/crypto/classical/" class="tool-link">
-          <i class="fa-solid fa-font"></i> Classical Ciphers
-          <span class="tool-tag">27 ciphers</span>
-        </a>
-      </div>
-    </div>
-
-    <!-- Hash -->
-    <div class="card cat-hash">
-      <div class="card-header">
-        <div class="card-icon cat-hash"><i class="fa-solid fa-hashtag"></i></div>
-        <div>
-          <div class="card-title">Hash</div>
-          <div class="card-desc">One-way cryptographic hashing</div>
-        </div>
-      </div>
-      <div class="tool-list">
-        <a href="tools/hash/" class="tool-link">
-          <i class="fa-solid fa-hashtag"></i> Hash Generator
-          <span class="tool-tag">MD5 SHA-3…</span>
-        </a>
-        <a href="tools/hash/bcrypt/" class="tool-link">
-          <i class="fa-solid fa-fish"></i> Bcrypt
-          <span class="tool-tag">bcrypt</span>
-        </a>
-        <a href="tools/hash/argon2/" class="tool-link">
-          <i class="fa-solid fa-droplet"></i> Argon2
-          <span class="tool-tag">argon2</span>
-        </a>
-      </div>
-    </div>
-
-    <!-- Encode / Decode -->
-    <div class="card cat-encode">
-      <div class="card-header">
-        <div class="card-icon cat-encode"><i class="fa-solid fa-code"></i></div>
-        <div>
-          <div class="card-title">Encoder / Decoder</div>
-          <div class="card-desc">Data encoding for web &amp; security</div>
-        </div>
-      </div>
-      <div class="tool-list">
-        <a href="tools/encode/" class="tool-link">
-          <i class="fa-solid fa-right-left"></i> Encoder / Decoder
-          <span class="tool-tag">28 types</span>
-        </a>
-      </div>
-    </div>
-
-    <!-- Convert -->
-    <div class="card cat-convert">
-      <div class="card-header">
-        <div class="card-icon cat-convert"><i class="fa-solid fa-calculator"></i></div>
-        <div>
-          <div class="card-title">Convert</div>
-          <div class="card-desc">Number systems &amp; representations</div>
-        </div>
-      </div>
-      <div class="tool-list">
-        <a href="tools/convert/number/" class="tool-link">
-          <i class="fa-solid fa-binary"></i> Number Converter
-          <span class="tool-tag">Hex Bin BCD…</span>
-        </a>
-      </div>
-    </div>
-
-    <!-- Generate -->
-    <div class="card cat-gen">
-      <div class="card-header">
-        <div class="card-icon cat-gen"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
-        <div>
-          <div class="card-title">Generate</div>
-          <div class="card-desc">Passwords, keys &amp; fake data</div>
-        </div>
-      </div>
-      <div class="tool-list">
-        <a href="tools/generate/password/" class="tool-link">
-          <i class="fa-solid fa-dice"></i> Password Generator
-          <span class="tool-tag">password</span>
-        </a>
-        <a href="tools/generate/fake-data/" class="tool-link">
-          <i class="fa-solid fa-user-secret"></i> Fake Data Generator
-          <span class="tool-tag">fake data</span>
-        </a>
-      </div>
-    </div>
-
-  </main>
-
-  <footer>
-    <div class="footer-inner">
-      <span class="footer-left">&copy; <span id="yr"></span> &middot; MIT License</span>
-      <!-- <span class="footer-center">MIT License</span> -->
-      <div class="footer-right">
-        <a href="https://github.com/patkarmandar/CyberKitchen" target="_blank" rel="noopener" class="footer-gh">
-          <i class="fa-brands fa-github"></i> GitHub
-        </a>
-      </div>
-    </div>
-  </footer>
-
-<script>
-  document.getElementById('yr').textContent = new Date().getFullYear();
-
-  function toggleTheme() {
-    var next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', next);
-    localStorage.setItem('ck-theme', next);
-    document.getElementById('themeIcon').className = next === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
-  }
-  (function () {
-    var t = localStorage.getItem('ck-theme') || 'light';
-    document.documentElement.setAttribute('data-theme', t);
-    document.getElementById('themeIcon').className = t === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
-  })();
-</script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('sw.js').catch(function () {});
+      });
+    }
+  </script>
 </body>
 </html>

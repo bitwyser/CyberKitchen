@@ -87,12 +87,12 @@
     io.appendChild(inP.panel); io.appendChild(outP.panel);
     root.appendChild(io);
 
-    function clearVerify() { outP.ta.classList.remove('verify-match', 'verify-fail'); }
+    function clearVerify() { outP.ta.classList.remove('verify-match', 'verify-fail'); inP.ta.classList.remove('verify-match', 'verify-fail'); }
     inP.ta.addEventListener('input', clearVerify);
     outP.ta.addEventListener('input', clearVerify);
 
     function alg() { return { name: 'RSA-OAEP', hash: hash }; }
-    function updateSel() { ui.setSel(strip, 'RSA-' + bits, hash, 'RSA-OAEP with ' + hash + '; generate or paste a keypair'); }
+    function updateSel() { ui.setSel(strip, 'RSA-' + bits, hash, 'RSA-OAEP with ' + hash); }
     function ptBytes() { var v = inP.ta.value; if (ptFmt.value === 'hex') return hexToBytes(v); if (ptFmt.value === 'base64') return unb64(v); return ENC.encode(v); }
     function fromPt(buf) { if (ptFmt.value === 'hex') return toHex(buf); if (ptFmt.value === 'base64') return b64(buf); return DEC.decode(buf); }
     function ctBytes(src) { return ctFmt.value === 'hex' ? hexToBytes(src) : unb64(src); }
@@ -107,7 +107,7 @@
     function doEncrypt() {
       if (!inP.ta.value) { ctx.toast('Input is empty', 'warn'); return; }
       if (!pub.ta.value) { ctx.toast('Public key required', 'warn'); return; }
-      crypto.subtle.importKey('spki', unpem(pub.ta.value), alg(), false, ['encrypt'])
+      return crypto.subtle.importKey('spki', unpem(pub.ta.value), alg(), false, ['encrypt'])
         .then(function (key) { return crypto.subtle.encrypt(alg(), key, ptBytes()); })
         .then(function (ct) { outP.ta.value = ctFmt.value === 'hex' ? toHex(ct) : b64(ct); clearVerify(); ctx.toast('Encrypted', 'success'); })
         .catch(function (e) {
@@ -120,7 +120,7 @@
       if (!inP.ta.value) { ctx.toast('Input is empty', 'warn'); return; }
       if (!priv.ta.value) { ctx.toast('Private key required', 'warn'); return; }
       var bytes; try { bytes = ctBytes(inP.ta.value); } catch (e) { ctx.toast('Invalid ciphertext', 'error'); return; }
-      crypto.subtle.importKey('pkcs8', unpem(priv.ta.value), alg(), false, ['decrypt'])
+      return crypto.subtle.importKey('pkcs8', unpem(priv.ta.value), alg(), false, ['decrypt'])
         .then(function (key) { return crypto.subtle.decrypt(alg(), key, bytes); })
         .then(function (pt) { outP.ta.value = fromPt(pt); clearVerify(); ctx.toast('Decrypted', 'success'); })
         .catch(function () { ctx.toast('Decryption failed: wrong key, hash, or ciphertext', 'error'); });
@@ -134,7 +134,7 @@
         function tryDec(src) { var bytes; try { bytes = ctBytes(src); } catch (e) { return Promise.resolve(null); } return crypto.subtle.decrypt(alg(), key, bytes).then(function (pt) { return fromPt(pt); }).catch(function () { return null; }); }
         return Promise.all([tryDec(a), tryDec(b)]).then(function (r) {
           var match = (r[0] !== null && r[0] === b) || (r[1] !== null && r[1] === a);
-          outP.ta.classList.add(match ? 'verify-match' : 'verify-fail');
+          CK.flashVerify(match, inP.ta, outP.ta);
           ctx.toast(match ? 'Match: input and output are a valid RSA pair' : 'No match', match ? 'success' : 'error');
         });
       }).catch(function () { ctx.toast('Invalid private key', 'error'); });

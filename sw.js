@@ -2,12 +2,13 @@
    sw.js - CyberKitchen service worker
    Precaches the whole app so it runs fully offline after first load.
    Cache-first for known assets; network fallback populates the cache;
-   navigations fall back to dashboard.html when offline.
+   navigations fall back to the app shell when offline.
    Relative paths keep it working under any base path (e.g. /CyberKitchen/).
 */
-var CACHE = 'cyberkitchen-v2';
+var CACHE = 'cyberkitchen-v3';
 var ASSETS = [
-  'dashboard.html',
+  './',
+  'index.html',
   'manifest.webmanifest',
   'assets/icon.svg',
   'assets/css/dashboard.css',
@@ -51,7 +52,7 @@ self.addEventListener('fetch', function (e) {
       }
       return res;
     }).catch(function () {
-      if (req.mode === 'navigate') return caches.match('dashboard.html');
+      if (req.mode === 'navigate') return caches.match('index.html').then(function (r) { return r || caches.match('./'); });
     });
   }));
 });

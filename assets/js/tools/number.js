@@ -195,7 +195,7 @@
       }
       return '';
     }
-    function clearVerify() { outP.ta.classList.remove('verify-match', 'verify-fail'); }
+    function clearVerify() { outP.ta.classList.remove('verify-match', 'verify-fail'); inP.ta.classList.remove('verify-match', 'verify-fail'); }
     function convert() {
       clearVerify();
       inPk.setActive(from); outPk.setActive(outId);
@@ -217,7 +217,7 @@
         var a = parseInput(left, from, inWidth, inCustBase);
         var b = parseInput(right, outId, outWidth, outCustBase);
         var match = (typeof a === 'bigint' && typeof b === 'bigint') ? (a === b) : (Math.abs(Number(a.toString()) - Number(b.toString())) < 1e-9);
-        clearVerify(); outP.ta.classList.add(match ? 'verify-match' : 'verify-fail');
+        clearVerify(); CK.flashVerify(match, inP.ta, outP.ta);
         ctx.toast(match ? 'Match: both panels are the same value' : 'No match', match ? 'success' : 'error');
       } catch (err) { ctx.toast(err.message, 'error'); }
     }

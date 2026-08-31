@@ -98,7 +98,7 @@
     var padSel = ui.select([['Pkcs7', 'PKCS#7'], ['ZeroPadding', 'Zero padding'], ['Iso10126', 'ISO 10126'], ['AnsiX923', 'ANSI X9.23'], ['NoPadding', 'No padding']].map(o), null, 'Pkcs7');
     var padF = ui.field('Padding', padSel);
     var ptFmt = ui.select([['utf8', 'UTF-8'], ['base64', 'Base64'], ['hex', 'Hexadecimal']].map(o), null, 'utf8');
-    var ctFmt = ui.select([['base64', 'Base64'], ['hex', 'Hexadecimal']].map(o), null, 'base64');
+    var ctFmt = ui.select([['utf8', 'Plain text'], ['base64', 'Base64'], ['hex', 'Hexadecimal']].map(o), null, 'utf8');
     // Left sub-grid, row-flow order: Key, Mode (row 1), IV, Padding (row 2)
     colL.appendChild(keyField); colL.appendChild(ui.field('Mode', modeSel));
     colL.appendChild(ivField); colL.appendChild(padF);
@@ -116,7 +116,7 @@
     io.appendChild(inP.panel); io.appendChild(outP.panel);
     root.appendChild(io);
 
-    function clearVerify() { outP.ta.classList.remove('verify-match', 'verify-fail'); }
+    function clearVerify() { outP.ta.classList.remove('verify-match', 'verify-fail'); inP.ta.classList.remove('verify-match', 'verify-fail'); }
     inP.ta.addEventListener('input', clearVerify);
     outP.ta.addEventListener('input', clearVerify);
 
@@ -137,19 +137,22 @@
         var kb = keyBytes(keyInput.value, keyFmt.value);
         if (kb !== 16 && kb !== 24 && kb !== 32) throw new Error('Key must be 16, 24, or 32 bytes (got ' + kb + ')');
         if (modeSel.value !== 'ECB' && !ivInput.value) throw new Error('IV required for ' + modeSel.value);
+        if (ctFmt.value === 'utf8') ctFmt.value = 'base64'; // ciphertext default is Base64
         var res = C.AES.encrypt(toWA(inP.ta.value, ptFmt.value), toWA(keyInput.value, keyFmt.value), opts());
         outP.ta.value = res.ciphertext.toString(ctFmt.value === 'hex' ? C.enc.Hex : C.enc.Base64);
         clearVerify(); ctx.toast('Encrypted (' + modeSel.value + ')', 'success');
       } catch (e) { ctx.toast(e.message, 'error'); }
     }
+    function ctInFmt(s) { var cf = detectFmt(s); return cf === 'utf8' ? 'base64' : cf; } // ciphertext is base64 or hex
     function doDecrypt() {
       try {
         if (!keyInput.value) throw new Error('Key required');
         if (!inP.ta.value) throw new Error('Input is empty');
-        var res = C.AES.decrypt({ ciphertext: toWA(inP.ta.value, ctFmt.value) }, toWA(keyInput.value, keyFmt.value), opts());
+        var res = C.AES.decrypt({ ciphertext: toWA(inP.ta.value, ctInFmt(inP.ta.value)) }, toWA(keyInput.value, keyFmt.value), opts());
         if (res.sigBytes <= 0) throw new Error('wrong key, IV, mode or padding');
-        var out = waToStr(res, ptFmt.value);
-        if (!out && res.sigBytes > 0) throw new Error('decrypted bytes are not valid ' + ptFmt.value);
+        if (ctFmt.value === 'base64') ctFmt.value = 'utf8'; // decrypted default is Plain text
+        var out = waToStr(res, ctFmt.value);
+        if (!out && res.sigBytes > 0) throw new Error('decrypted bytes are not valid ' + fmtLabelOf(ctFmt.value));
         outP.ta.value = out; clearVerify(); ctx.toast('Decrypted', 'success');
       } catch (e) { ctx.toast('Decryption failed: ' + e.message, 'error'); }
     }
@@ -161,9 +164,9 @@
       if (!a || !b) { ctx.toast('Both panels need content', 'warn'); return; }
       var kw = toWA(keyInput.value, keyFmt.value);
       function enc(src) { try { return C.AES.encrypt(toWA(src, ptFmt.value), kw, opts()).ciphertext.toString(ctFmt.value === 'hex' ? C.enc.Hex : C.enc.Base64); } catch (e) { return null; } }
-      function dec(src) { try { var r = C.AES.decrypt({ ciphertext: toWA(src, ctFmt.value) }, kw, opts()); return r.sigBytes > 0 ? waToStr(r, ptFmt.value) : null; } catch (e) { return null; } }
+      function dec(src) { try { var r = C.AES.decrypt({ ciphertext: toWA(src, ctInFmt(src)) }, kw, opts()); return r.sigBytes > 0 ? waToStr(r, ctFmt.value) : null; } catch (e) { return null; } }
       var match = (enc(a) === b.trim()) || (dec(a) === b) || (enc(b) === a.trim()) || (dec(b) === a);
-      outP.ta.classList.add(match ? 'verify-match' : 'verify-fail');
+      CK.flashVerify(match, inP.ta, outP.ta);
       ctx.toast(match ? 'Match: input and output are a valid AES pair' : 'No match', match ? 'success' : 'error');
     }
     function doDetect() {
@@ -171,17 +174,16 @@
       if (!s) { ctx.toast('Enter data in the input first', 'warn'); return; }
       var fmt = detectFmt(s);
       ptFmt.value = fmt;
-      if (fmt !== 'utf8') ctFmt.value = fmt;
       var len = fmtByteLen(s, fmt), guessed = '';
       if (fmt !== 'utf8' && len != null && len > 0) { modeSel.value = (len % 16 === 0) ? 'CBC' : 'CTR'; guessed = ', guessed ' + modeSel.value + ' mode (best-effort)'; }
       updateSel();
       ctx.toast('AES · detected ' + fmtLabelOf(fmt) + ' input' + guessed, 'success');
     }
     function doShare() { var st = { k: keyInput.value, kf: keyFmt.value, iv: ivInput.value, ivf: ivFmt.value, m: modeSel.value, p: padSel.value, cf: ctFmt.value, pf: ptFmt.value, pt: inP.ta.value, ct: outP.ta.value }; CK.copy(location.href.split('#')[0] + '#tool=aes&s=' + b64uEnc(JSON.stringify(st))); }
-    function doReset() { keyInput.value = ''; ivInput.value = ''; inP.ta.value = ''; outP.ta.value = ''; keyFmt.value = 'utf8'; ivFmt.value = 'hex'; modeSel.value = 'CBC'; padSel.value = 'Pkcs7'; ctFmt.value = 'base64'; ptFmt.value = 'utf8'; updateSel(); ctx.toast('Reset complete', 'success'); }
+    function doReset() { keyInput.value = ''; ivInput.value = ''; inP.ta.value = ''; outP.ta.value = ''; keyFmt.value = 'utf8'; ivFmt.value = 'hex'; modeSel.value = 'CBC'; padSel.value = 'Pkcs7'; ctFmt.value = 'utf8'; ptFmt.value = 'utf8'; updateSel(); ctx.toast('Reset complete', 'success'); }
 
     var m = /(?:^|[#&])s=([\w-]+)/.exec(location.hash || '');
-    if (m) { try { var st = JSON.parse(b64uDec(m[1])); keyInput.value = st.k || ''; keyFmt.value = st.kf || 'utf8'; ivInput.value = st.iv || ''; ivFmt.value = st.ivf || 'hex'; modeSel.value = st.m || 'CBC'; padSel.value = st.p || 'Pkcs7'; ctFmt.value = st.cf || 'base64'; ptFmt.value = st.pf || 'utf8'; inP.ta.value = st.pt || ''; outP.ta.value = st.ct || ''; } catch (e) { } }
+    if (m) { try { var st = JSON.parse(b64uDec(m[1])); keyInput.value = st.k || ''; keyFmt.value = st.kf || 'utf8'; ivInput.value = st.iv || ''; ivFmt.value = st.ivf || 'hex'; modeSel.value = st.m || 'CBC'; padSel.value = st.p || 'Pkcs7'; ctFmt.value = st.cf || 'utf8'; ptFmt.value = st.pf || 'utf8'; inP.ta.value = st.pt || ''; outP.ta.value = st.ct || ''; } catch (e) { } }
     updateSel();
   });
 })();

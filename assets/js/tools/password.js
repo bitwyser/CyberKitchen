@@ -1,11 +1,13 @@
 /*
    password.js - Password Generator (Web Crypto RNG)
-   Policy presets, modes (AlphaNum/PIN/Passphrase/Custom), exclude
-   ambiguous/similar, embed-your-word with leet + anchor, quantity, strength.
+   Policy presets, modes (AlphaNum/PIN/Passphrase/Custom), character-set and
+   option switches, custom symbols, guarantee-each-type, no-consecutive-repeat,
+   embed-your-word with leet + anchor, quantity, live strength meter.
 */
 (function () {
   'use strict';
   var SETS = { lower: 'abcdefghijklmnopqrstuvwxyz', upper: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', digits: '0123456789', symbols: '!@#$%^&*()-_=+[]{};:,.<>?/' };
+  var DEFAULT_SYMBOLS = '!@#$%^&*()-_=+[]{}|;:,.<>?';
   var SIMILAR = /[il1LoO0]/g;
   var AMBIG_SYM = /[()\[\]{}<>\/\\|'"`;:,.]/g;
   var LEET = { a: '@', e: '3', i: '1', o: '0', s: '$', t: '7', A: '@', E: '3', I: '1', O: '0', S: '$', T: '7' };
@@ -19,7 +21,10 @@
   var PRESETS = { pci: { len: 12, sets: ['upper', 'lower', 'digits', 'symbols'] }, nist: { len: 16, sets: ['upper', 'lower', 'digits', 'symbols'] }, hipaa: { len: 12, sets: ['upper', 'lower', 'digits', 'symbols'] }, owasp: { len: 14, sets: ['upper', 'lower', 'digits', 'symbols'] } };
 
   var I_DICE = '<rect x="4" y="4" width="16" height="16" rx="3"/><circle cx="9" cy="9" r="1.2"/><circle cx="15" cy="15" r="1.2"/><circle cx="15" cy="9" r="1.2"/><circle cx="9" cy="15" r="1.2"/>';
+  var I_SHARE = '<path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/>';
   var I_RESET = '<path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5"/>';
+  function b64uEnc(s) { var b = new TextEncoder().encode(s), x = ''; b.forEach(function (c) { x += String.fromCharCode(c); }); return btoa(x).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
+  function b64uDec(s) { s = s.replace(/-/g, '+').replace(/_/g, '/'); while (s.length % 4) s += '='; var bin = atob(s), a = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i); return new TextDecoder().decode(a); }
 
   CK.registerTool('password', function (root, ctx) {
     var ui = CK.ui, el = CK.el, mode = 'custom';
@@ -28,71 +33,138 @@
 
     var cfg = ui.configPanel();
     var strip = ui.selStrip(I_DICE);
+    strip.acts.appendChild(ui.iconBtn(I_SHARE, 'Share', doShare));
     strip.acts.appendChild(ui.iconBtn(I_RESET, 'Reset', doReset));
     cfg.appendChild(strip.strip);
 
     var presetPk = ui.picker([{ label: 'Policy preset', items: [{ id: 'pci', label: 'PCI-DSS' }, { id: 'nist', label: 'NIST' }, { id: 'hipaa', label: 'HIPAA' }, { id: 'owasp', label: 'OWASP' }] }], applyPreset);
-    cfg.appendChild(presetPk.el);
     var modePk = ui.picker([{ label: 'Mode', items: [{ id: 'custom', label: 'Custom' }, { id: 'alnum', label: 'AlphaNum' }, { id: 'pin', label: 'PIN' }, { id: 'passphrase', label: 'Passphrase' }] }], function (id) { mode = id; modePk.setActive(id); applyMode(); generate(); });
-    cfg.appendChild(modePk.el);
+    var topRow = el('div', { class: 'pw-top' });
+    topRow.appendChild(presetPk.el); topRow.appendChild(modePk.el);
+    cfg.appendChild(topRow);
+    var row2 = el('div', { class: 'pw-row' });
+    cfg.appendChild(row2);
 
-    var form = el('div', { class: 'cfg-form' });
-    var lenRange = el('input', { type: 'range', min: '4', max: '64', value: '16' });
-    var lenVal = el('span', { class: 'range-val' }, '16');
-    var lenRow = el('div', { class: 'range-row', style: 'min-width:220px' }); lenRow.appendChild(lenRange); lenRow.appendChild(lenVal);
-    var lenField = ui.field('Length', lenRow); form.appendChild(lenField);
+    // A labelled toggle switch: label on the left, switch on the right
+    function switchRow(label, checked, key) {
+      var cb = el('input', { type: 'checkbox' }); cb.checked = !!checked;
+      var sw = el('label', { class: 'switch' }); sw.appendChild(cb); sw.appendChild(el('span', { class: 'track' }));
+      var row = el('div', { class: 'pw-opt' });
+      row.appendChild(el('span', { class: 'pw-opt-label' }, label)); row.appendChild(sw);
+      cb.addEventListener('change', generate);
+      if (key) cb.dataset.set = key;
+      return { row: row, cb: cb };
+    }
+
+    var grid = el('div', { class: 'pw-grid' });
+    var c1 = el('div', { class: 'col' }), c2 = el('div', { class: 'col' }), c3 = el('div', { class: 'col' }), c4 = el('div', { class: 'col' });
+
+    // Column 1: Character sets (switches)
+    var tUpper = switchRow('Uppercase A-Z', true, 'upper'), tLower = switchRow('Lowercase a-z', true, 'lower'),
+      tDigit = switchRow('Numbers 0-9', true, 'digits'), tSym = switchRow('Symbols', true, 'symbols');
+    var setsBox = el('div', { class: 'pw-opts' });
+    [tUpper, tLower, tDigit, tSym].forEach(function (t) { setsBox.appendChild(t.row); });
+    var setsField = ui.field('Character sets', setsBox); c1.appendChild(setsField);
+
+    // Column 2: Options (switches)
+    var tAmbig = switchRow('Exclude ambiguous characters', false), tSim = switchRow('Exclude similar characters', false),
+      tGuar = switchRow('Guarantee one of each type', true), tNoRep = switchRow('No consecutive repeats', false);
+    var optBox = el('div', { class: 'pw-opts' });
+    [tAmbig, tSim, tGuar, tNoRep].forEach(function (t) { optBox.appendChild(t.row); });
+    var optField = ui.field('Options', optBox); c2.appendChild(optField);
+
+    // Row under the pickers: Quantity first, then Length / Words (both slider + number)
+    var qtyRange = el('input', { type: 'range', class: 'slim', min: '1', max: '100', value: '5' });
     var qtyInput = el('input', { class: 'inp sm', type: 'number', min: '1', max: '100', value: '5' });
-    form.appendChild(ui.field('Quantity', qtyInput));
-    function tog(label, key, checked) { var t = ui.toggle(label, checked, generate); t.cb.dataset.set = key; return t; }
-    var tUpper = tog('A-Z', 'upper', true), tLower = tog('a-z', 'lower', true), tDigit = tog('0-9', 'digits', true), tSym = tog('!@#', 'symbols', true);
-    var tAmbig = ui.toggle('No ambiguous', false, generate), tSim = ui.toggle('No similar', false, generate);
-    var setsWrap = el('div', { style: 'display:flex; flex-wrap:wrap; gap:12px; align-items:center;' });
-    [tUpper, tLower, tDigit, tSym, tAmbig, tSim].forEach(function (t) { setsWrap.appendChild(t.wrap); });
-    var setsField = ui.field('Character sets', setsWrap); form.appendChild(setsField);
-    cfg.appendChild(form);
+    var qtyRow = el('div', { class: 'length-row' }); qtyRow.appendChild(qtyRange); qtyRow.appendChild(qtyInput);
+    row2.appendChild(ui.field('Quantity', qtyRow));
+    var lenRange = el('input', { type: 'range', class: 'slim', min: '4', max: '128', value: '16' });
+    var lenNum = el('input', { class: 'inp sm', type: 'number', min: '4', max: '128', value: '16' });
+    var lenRow = el('div', { class: 'length-row' }); lenRow.appendChild(lenRange); lenRow.appendChild(lenNum);
+    var lenField = ui.field('Length', lenRow); row2.appendChild(lenField);
 
-    var embedForm = el('div', { class: 'cfg-form' });
-    var wordInput = el('input', { class: 'inp', type: 'text', spellcheck: 'false', autocomplete: 'off', placeholder: 'Embed a word (optional)' });
-    var wf = ui.field('Embed word', wordInput); wf.style.flex = '1'; wf.style.minWidth = '200px'; embedForm.appendChild(wf);
-    var leetTog = ui.toggle('Leet', false, generate); embedForm.appendChild(ui.field('Transform', leetTog.wrap));
-    var anchorSel = ui.select([['start', 'At start'], ['end', 'At end'], ['middle', 'Middle'], ['random', 'Random']].map(function (a) { return { value: a[0], label: a[1] }; }), generate, 'random');
-    embedForm.appendChild(ui.field('Anchor', anchorSel));
+    // Column 3: Custom symbols + Embed word
+    var symInput = el('input', { class: 'inp', type: 'text', spellcheck: 'false', autocomplete: 'off', value: DEFAULT_SYMBOLS, placeholder: 'Symbols to draw from' });
+    symInput.addEventListener('input', generate);
+    var symField = ui.field('Custom symbols', symInput); c3.appendChild(symField);
+    var wordInput = el('input', { class: 'inp', type: 'text', spellcheck: 'false', autocomplete: 'off', placeholder: 'e.g. tiger, 2024' });
     wordInput.addEventListener('input', generate);
-    cfg.appendChild(embedForm);
+    var embField = ui.field('Embed word (optional)', wordInput); c3.appendChild(embField);
+
+    // Column 4: Transform + Anchor
+    var leetTog = switchRow('Leet transform', false);
+    var leetBox = el('div', { class: 'pw-opts' }); leetBox.appendChild(leetTog.row);
+    var leetField = ui.field('Transform', leetBox); c4.appendChild(leetField);
+    var anchorSel = ui.select([['start', 'At start'], ['end', 'At end'], ['middle', 'Middle'], ['random', 'Random']].map(function (a) { return { value: a[0], label: a[1] }; }), generate, 'random');
+    var anchorField = ui.field('Anchor position', anchorSel); c4.appendChild(anchorField);
+
+    grid.appendChild(c1); grid.appendChild(c2); grid.appendChild(c3); grid.appendChild(c4);
+    cfg.appendChild(grid);
     root.appendChild(cfg);
 
     var io = ui.ioRow(true);
-    var panel = el('div', { class: 'panel io-p' });
-    var hdr = el('div', { class: 'panel-hdr' }); hdr.innerHTML = CK.iconSvg(I_DICE, 12) + ' GENERATED';
-    var fill = el('span', { class: 'fill' }); var tb = el('span', { class: 'tb' });
-    var genBtn = el('button', { class: 'prim enc' }, 'Generate');
-    tb.appendChild(genBtn); tb.appendChild(ui.miniBtn('Copy', function () { CK.copy(ta.value); })); tb.appendChild(ui.miniBtn('Download', function () { CK.download(ta.value, 'passwords.txt'); }));
-    hdr.appendChild(fill); hdr.appendChild(tb); panel.appendChild(hdr);
-    var meta = el('div', { style: 'display:flex; justify-content:space-between; font-size:11px; color:var(--muted);' });
-    var strLabel = el('span', {}, 'Strength'), entLabel = el('span', {}); meta.appendChild(strLabel); meta.appendChild(entLabel);
-    var bar = el('div', { class: 'strength' }); var barFill = el('span'); bar.appendChild(barFill);
-    var ta = el('textarea', { class: 'ta', readonly: 'readonly' });
-    panel.appendChild(meta); panel.appendChild(bar); panel.appendChild(ta);
-    io.appendChild(panel); root.appendChild(io);
+    var outP = ui.textPanel({ title: 'GENERATED', icon: I_DICE, readonly: true, primaries: [{ label: 'Generate', cls: 'enc', onClick: generate }], actions: ['copy', 'download'], downloadName: 'passwords.txt' });
+    var ta = outP.ta;
+    var strBadge = el('span', { class: 'pw-strength' }); outP.panel.appendChild(strBadge);
+    var ccEl = outP.panel.querySelector('.char-count');
+    io.appendChild(outP.panel); root.appendChild(io);
 
-    function applyPreset(id) { presetPk.setActive(id); var p = PRESETS[id]; mode = 'custom'; modePk.setActive('custom'); lenRange.value = p.len; lenVal.textContent = p.len; tUpper.cb.checked = p.sets.indexOf('upper') >= 0; tLower.cb.checked = p.sets.indexOf('lower') >= 0; tDigit.cb.checked = p.sets.indexOf('digits') >= 0; tSym.cb.checked = p.sets.indexOf('symbols') >= 0; applyMode(); generate(); }
+    function setBounds(mn, mx) { lenRange.min = lenNum.min = mn; lenRange.max = lenNum.max = mx; }
+    function setLen(v) { lenRange.value = v; lenNum.value = v; }
+    function setQty(v) { qtyRange.value = v; qtyInput.value = v; }
+    function symbolsSet() { var s = symInput.value; return (s && s.length) ? s : SETS.symbols; }
+
+    function applyPreset(id) {
+      presetPk.setActive(id); var p = PRESETS[id]; mode = 'custom'; modePk.setActive('custom');
+      setBounds(4, 128); setLen(p.len);
+      tUpper.cb.checked = p.sets.indexOf('upper') >= 0; tLower.cb.checked = p.sets.indexOf('lower') >= 0;
+      tDigit.cb.checked = p.sets.indexOf('digits') >= 0; tSym.cb.checked = p.sets.indexOf('symbols') >= 0;
+      applyMode(); generate();
+    }
     function applyMode() {
-      var pass = mode === 'passphrase', pin = mode === 'pin';
-      setsField.style.display = (pass || pin) ? 'none' : '';
-      embedForm.style.display = pass ? 'none' : '';
+      var pass = mode === 'passphrase', pin = mode === 'pin', hideChar = pass || pin;
+      setsField.style.display = hideChar ? 'none' : '';
+      symField.style.display = hideChar ? 'none' : '';
+      optField.style.display = hideChar ? 'none' : '';
+      embField.style.display = hideChar ? 'none' : '';
+      leetField.style.display = hideChar ? 'none' : '';
+      anchorField.style.display = hideChar ? 'none' : '';
       lenField.querySelector('label').textContent = pass ? 'Words' : 'Length';
-      if (pass) { lenRange.min = 3; lenRange.max = 10; if (+lenRange.value > 10 || +lenRange.value < 3) { lenRange.value = 5; lenVal.textContent = 5; } }
-      else { lenRange.min = pin ? 3 : 4; lenRange.max = pin ? 12 : 64; }
+      if (pass) { setBounds(3, 10); if (+lenRange.value > 10 || +lenRange.value < 3) setLen(5); }
+      else setBounds(pin ? 3 : 4, pin ? 12 : 128);
       if (mode === 'alnum') { tUpper.cb.checked = tLower.cb.checked = tDigit.cb.checked = true; tSym.cb.checked = false; }
     }
     function pool() {
       var p = '';
       if (mode === 'pin') return SETS.digits;
-      [tUpper, tLower, tDigit, tSym].forEach(function (t) { if (t.cb.checked) { var s = SETS[t.cb.dataset.set]; if (t.cb.dataset.set === 'symbols' && tAmbig.cb.checked) s = s.replace(AMBIG_SYM, ''); p += s; } });
+      [tUpper, tLower, tDigit, tSym].forEach(function (t) {
+        if (t.cb.checked) {
+          var key = t.cb.dataset.set, s = key === 'symbols' ? symbolsSet() : SETS[key];
+          if (key === 'symbols' && tAmbig.cb.checked) s = s.replace(AMBIG_SYM, '');
+          p += s;
+        }
+      });
       if (tSim.cb.checked) p = p.replace(SIMILAR, '');
       return p;
     }
-    function chosenSets() { var arr = []; [tUpper, tLower, tDigit, tSym].forEach(function (t) { if (t.cb.checked) { var s = SETS[t.cb.dataset.set]; if (t.cb.dataset.set === 'symbols' && tAmbig.cb.checked) s = s.replace(AMBIG_SYM, ''); if (tSim.cb.checked) s = s.replace(SIMILAR, ''); if (s) arr.push(s); } }); return arr; }
+    function chosenSets() {
+      var arr = [];
+      [tUpper, tLower, tDigit, tSym].forEach(function (t) {
+        if (t.cb.checked) {
+          var key = t.cb.dataset.set, s = key === 'symbols' ? symbolsSet() : SETS[key];
+          if (key === 'symbols' && tAmbig.cb.checked) s = s.replace(AMBIG_SYM, '');
+          if (tSim.cb.checked) s = s.replace(SIMILAR, '');
+          if (s) arr.push(s);
+        }
+      });
+      return arr;
+    }
+    function noRepeat(s, p) {
+      if (p.length < 2) return s;
+      var arr = s.split('');
+      for (var i = 1; i < arr.length; i++) { var tries = 0; while (arr[i] === arr[i - 1] && tries < 30) { arr[i] = p[randInt(p.length)]; tries++; } }
+      return arr.join('');
+    }
 
     function onePassphrase(n) { var w = []; for (var i = 0; i < n; i++) { var word = pick(WORDS); w.push(word.charAt(0).toUpperCase() + word.slice(1)); } return w.join('-') + randInt(100); }
     function embed(pw) {
@@ -106,34 +178,75 @@
     }
     function onePassword(len) {
       var p = pool(); if (!p) return '';
-      var sets = mode === 'pin' ? [SETS.digits] : chosenSets();
       var chars = [], i;
-      for (i = 0; i < sets.length && i < len; i++) chars.push(sets[i][randInt(sets[i].length)]);
+      if (tGuar.cb.checked) {
+        var sets = mode === 'pin' ? [SETS.digits] : chosenSets();
+        for (i = 0; i < sets.length && i < len; i++) chars.push(sets[i][randInt(sets[i].length)]);
+      }
       for (i = chars.length; i < len; i++) chars.push(p[randInt(p.length)]);
-      return embed(shuffle(chars).join(''));
+      var body = shuffle(chars).join('');
+      if (tNoRep.cb.checked) body = noRepeat(body, p);
+      return embed(body);
     }
     function strength(entropyBits) {
-      var pct = Math.min(100, Math.round(entropyBits / 128 * 100)), label, color;
-      if (entropyBits < 40) { label = 'Weak'; color = 'var(--err)'; } else if (entropyBits < 60) { label = 'Fair'; color = 'var(--warn)'; } else if (entropyBits < 80) { label = 'Strong'; color = 'var(--acc)'; } else { label = 'Very strong'; color = 'var(--ok)'; }
-      barFill.style.width = pct + '%'; barFill.style.background = color; strLabel.textContent = 'Strength: ' + label; entLabel.textContent = Math.round(entropyBits) + ' bits entropy';
+      var label, cls;
+      if (entropyBits < 40) { label = 'Weak'; cls = 'err'; } else if (entropyBits < 60) { label = 'Fair'; cls = 'warn'; } else if (entropyBits < 80) { label = 'Strong'; cls = 'acc'; } else { label = 'Very strong'; cls = 'ok'; }
+      strBadge.style.display = entropyBits > 0 ? '' : 'none';
+      strBadge.textContent = label + ' · ' + Math.round(entropyBits) + ' bits';
+      strBadge.className = 'pw-strength ' + cls;
+      strBadge.style.right = (23 + (ccEl ? ccEl.offsetWidth : 0) + 8) + 'px';
     }
     function generate() {
-      lenVal.textContent = lenRange.value;
       var qty = Math.max(1, Math.min(100, +qtyInput.value || 1)), out = [], i, ent;
       if (mode === 'passphrase') { var n = +lenRange.value; for (i = 0; i < qty; i++) out.push(onePassphrase(n)); ent = n * Math.log2(WORDS.length) + Math.log2(100); }
       else { var p = pool(); if (!p) { ta.value = ''; ctx.toast('Select at least one character set', 'warn'); strength(0); return; } var len = +lenRange.value; for (i = 0; i < qty; i++) out.push(onePassword(len)); ent = len * Math.log2(p.length); }
       ta.value = out.join('\n'); strength(ent);
     }
 
-    lenRange.addEventListener('input', generate);
-    qtyInput.addEventListener('input', generate);
-    genBtn.addEventListener('click', generate);
+    lenRange.addEventListener('input', function () { lenNum.value = lenRange.value; generate(); });
+    lenNum.addEventListener('input', function () { lenRange.value = lenNum.value; generate(); });
+    lenNum.addEventListener('change', function () { lenNum.value = lenRange.value; });
+    qtyRange.addEventListener('input', function () { qtyInput.value = qtyRange.value; generate(); });
+    qtyInput.addEventListener('input', function () { qtyRange.value = qtyInput.value; generate(); });
+    qtyInput.addEventListener('change', function () { qtyInput.value = qtyRange.value; });
+
+    var sm = /(?:^|[#&])s=([\w-]+)/.exec(location.hash || '');
+    if (sm) {
+      try {
+        var st = JSON.parse(b64uDec(sm[1]));
+        if (st.m) { mode = st.m; modePk.setActive(mode); }
+        if (st.l) setLen(st.l);
+        if (st.q) setQty(st.q);
+        if ('u' in st) { tUpper.cb.checked = st.u; tLower.cb.checked = st.lo; tDigit.cb.checked = st.d; tSym.cb.checked = st.y; }
+        if ('amb' in st) { tAmbig.cb.checked = st.amb; tSim.cb.checked = st.sim; }
+        if ('guar' in st) tGuar.cb.checked = st.guar;
+        if ('nr' in st) tNoRep.cb.checked = st.nr;
+        if (st.sym != null) symInput.value = st.sym;
+        if (st.w) wordInput.value = st.w; if ('leet' in st) leetTog.cb.checked = st.leet; if (st.anc) anchorSel.value = st.anc;
+      } catch (e) { }
+    }
     applyMode(); generate();
 
     return {
       reset: doReset,
       onKey: function (e) { if ((e.ctrlKey || e.metaKey) && String(e.key).toLowerCase() === 'g') { e.preventDefault(); generate(); } }
     };
-    function doReset() { mode = 'custom'; modePk.setActive('custom'); presetPk.setActive(null); lenRange.min = 4; lenRange.max = 64; lenRange.value = '16'; lenVal.textContent = '16'; qtyInput.value = '5'; tUpper.cb.checked = tLower.cb.checked = tDigit.cb.checked = tSym.cb.checked = true; tAmbig.cb.checked = tSim.cb.checked = false; wordInput.value = ''; leetTog.cb.checked = false; anchorSel.value = 'random'; applyMode(); generate(); ctx.toast('Reset complete', 'success'); }
+    function doShare() {
+      CK.copy(location.href.split('#')[0] + '#tool=password&s=' + b64uEnc(JSON.stringify({
+        m: mode, l: +lenRange.value, q: +qtyInput.value,
+        u: tUpper.cb.checked, lo: tLower.cb.checked, d: tDigit.cb.checked, y: tSym.cb.checked,
+        amb: tAmbig.cb.checked, sim: tSim.cb.checked, guar: tGuar.cb.checked, nr: tNoRep.cb.checked, sym: symInput.value,
+        w: wordInput.value, leet: leetTog.cb.checked, anc: anchorSel.value
+      })));
+    }
+    function doReset() {
+      mode = 'custom'; modePk.setActive('custom'); presetPk.setActive(null);
+      setBounds(4, 128); setLen(16); setQty(5);
+      tUpper.cb.checked = tLower.cb.checked = tDigit.cb.checked = tSym.cb.checked = true;
+      tAmbig.cb.checked = tSim.cb.checked = tNoRep.cb.checked = false; tGuar.cb.checked = true;
+      symInput.value = DEFAULT_SYMBOLS;
+      wordInput.value = ''; leetTog.cb.checked = false; anchorSel.value = 'random';
+      applyMode(); generate(); ctx.toast('Reset complete', 'success');
+    }
   });
 })();
