@@ -249,19 +249,12 @@ var CK = (function () {
     var themeBtn = document.getElementById('themeBtn');
     if (themeBtn) themeBtn.addEventListener('click', function () { theme.toggle(); });
 
-    var collapseBtn = document.getElementById('collapseBtn');
-    if (collapseBtn) collapseBtn.addEventListener('click', function () {
-      document.body.classList.toggle('nav-collapsed');
-      store.set('nav.collapsed', document.body.classList.contains('nav-collapsed') ? '1' : '0');
-    });
-
     var backdrop = document.getElementById('backdrop');
     if (backdrop) backdrop.addEventListener('click', function () { document.body.classList.remove('drawer-open'); });
   }
 
   function boot() {
     theme.load();
-    if (store.get('nav.collapsed', '0') === '1') document.body.classList.add('nav-collapsed');
     buildRail();
     _wireShell();
     activate(currentId() || (_tools[0] && _tools[0].id));
