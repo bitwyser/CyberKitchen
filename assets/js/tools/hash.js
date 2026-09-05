@@ -82,10 +82,17 @@
     var colL = el('div', { class: 'hash-left' });
     var colR = el('div', { class: 'col' });
 
-    var groups = GROUPS.map(function (g) { return { label: g, items: ALGOS.filter(function (a) { return a.group === g; }).map(function (a) { return { id: a.id, label: a.label, title: a.label }; }) }; });
-    var pk = ui.picker(groups, select);
-    pk.el.classList.add('stacked');
-    var pickWrap = el('div'); pickWrap.appendChild(pk.el);
+    // One dropdown per algorithm group; picking from one clears the others
+    var groupSelects = {};
+    var pickGrid = el('div', { style: 'display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:10px 14px;' });
+    GROUPS.forEach(function (g) {
+      var items = ALGOS.filter(function (a) { return a.group === g; });
+      var sel = ui.select([{ value: '', label: 'Select...' }].concat(items.map(function (a) { return { value: a.id, label: a.label }; })), function (v) { if (v) select(v); }, '');
+      groupSelects[g] = sel;
+      pickGrid.appendChild(ui.field(g, sel));
+    });
+    function syncSelects(id) { var grp = (get(id) || {}).group; GROUPS.forEach(function (g) { groupSelects[g].value = (g === grp ? id : ''); }); }
+    var pickWrap = el('div'); pickWrap.appendChild(pickGrid);
 
     // HMAC sub-column
     var hmacWrap = el('div', { class: 'col' });
@@ -125,7 +132,7 @@
     inP.ta.addEventListener('input', clearVerify);
     outP.ta.addEventListener('input', clearVerify);
 
-    function select(id) { var a = get(id); if (!a) return; current = id; pk.setActive(id); ui.setSel(strip, a.label, a.badge, a.label + ' digest, ' + a.bytes + ' bytes'); }
+    function select(id) { var a = get(id); if (!a) return; current = id; syncSelects(id); ui.setSel(strip, a.label, a.badge, a.label + ' digest, ' + a.bytes + ' bytes'); }
     function inputBytes() { var v = inP.ta.value; if (!v) return null; if (inFmt.value === 'hex') return hexToBytes(v); if (inFmt.value === 'base64') { try { return unb64(v); } catch (e) { return null; } } return ENC.encode(v); }
     function keyBytes() { var v = keyInput.value; if (keyFmt.value === 'hex') return hexToBytes(v); if (keyFmt.value === 'base64') { try { return unb64(v); } catch (e) { return new Uint8Array(); } } return ENC.encode(v); }
     // returns Promise<hex> for the current algorithm (HMAC-aware)

@@ -246,7 +246,7 @@ select.inp:hover{border-color:var(--muted);}
 .cfg-grid.split-73{grid-template-columns:7fr 3fr;}
 .hash-left{display:grid; grid-template-columns:470px minmax(0,1fr); gap:16px; align-items:start;}
 .bc-left{display:grid; grid-template-columns:240px minmax(0,1fr); gap:16px; align-items:start;}
-.argon-left{display:grid; grid-template-columns:345px 150px minmax(0,1fr); gap:16px; align-items:start;}
+.argon-left{display:grid; grid-template-columns:190px 320px 150px minmax(0,1fr); gap:16px; align-items:start;}
 .cfg-grid .col, .pw-grid .col, .fd-grid .col{display:flex; flex-direction:column; gap:12px;}
 /* Fake data: type picker (col 1) | settings (col 2, with Count | Format on top) */
 .fd-grid{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:20px; align-items:start; padding:8px 13px 12px;}

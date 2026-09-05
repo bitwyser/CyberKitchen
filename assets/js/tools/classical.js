@@ -144,16 +144,23 @@
     var keyField = ui.field('Key', keyInput);
     var numField = ui.field('Shift', numInput);
 
-    var groups = GROUPS.map(function (g) { return { label: g, items: LIST.filter(function (c) { return c.group === g; }).map(function (c) { return { id: c.id, label: c.label, title: c.desc }; }) }; });
-    var pk = ui.picker(groups, select);
-    pk.el.classList.add('stacked');
+    // One dropdown per cipher group; picking from one clears the others
+    var groupSelects = {};
+    var pickWrap = el('div', { style: 'display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px 14px;' });
+    GROUPS.forEach(function (g) {
+      var items = LIST.filter(function (c) { return c.group === g; });
+      var sel = ui.select([{ value: '', label: 'Select...' }].concat(items.map(function (c) { return { value: c.id, label: c.label }; })), function (v) { if (v) select(v); }, '');
+      groupSelects[g] = sel;
+      pickWrap.appendChild(ui.field(g, sel));
+    });
+    function syncSelects(id) { var grp = (get(id) || {}).group; GROUPS.forEach(function (g) { groupSelects[g].value = (g === grp ? id : ''); }); }
 
-    // Left column: cipher picker. Right column: extra input (content hugging the left).
+    // Left column: cipher dropdowns. Right column: extra input (content hugging the left).
     var grid = el('div', { class: 'cfg-grid split-73' });
     var colL = el('div', { class: 'col' });
     var colR = el('div', { class: 'col', style: 'align-items:flex-start;' });
     keyInput.style.width = '180px';
-    colL.appendChild(pk.el);
+    colL.appendChild(pickWrap);
     colR.appendChild(keyField); colR.appendChild(numField);
     grid.appendChild(colL); grid.appendChild(colR);
     cfg.appendChild(grid);
@@ -171,7 +178,7 @@
 
     function params() { return { key: keyInput.value, num: parseInt(numInput.value, 10) || 0 }; }
     function select(id) {
-      var c = get(id); if (!c) return; current = id; pk.setActive(id); ui.setSel(strip, c.label, c.badge, c.desc);
+      var c = get(id); if (!c) return; current = id; syncSelects(id); ui.setSel(strip, c.label, c.badge, c.desc);
       keyField.style.display = c.key ? '' : 'none';
       if (c.key) { keyField.querySelector('label').textContent = c.key; keyInput.placeholder = c.keyPh || ''; }
       numField.style.display = c.num ? '' : 'none';

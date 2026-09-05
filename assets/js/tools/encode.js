@@ -246,13 +246,16 @@
     strip.acts.appendChild(ui.iconBtn(I_RESET, 'Reset', doReset));
     cfg.appendChild(strip.strip);
 
-    var groups = GROUP_ORDER.map(function (g) {
-      return { label: g, items: LIST.filter(function (e) { return e.group === g; }).map(function (e) { return { id: e.id, label: e.label, title: e.desc }; }) };
+    // One dropdown per encoding group; picking from one clears the others
+    var groupSelects = {};
+    var pkGrid = CK.el('div', { style: 'display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px 14px; padding:11px 13px;' });
+    GROUP_ORDER.forEach(function (g) {
+      var items = LIST.filter(function (e) { return e.group === g; });
+      var sel = ui.select([{ value: '', label: 'Select...' }].concat(items.map(function (e) { return { value: e.id, label: e.label }; })), function (v) { if (v) select(v); }, '');
+      groupSelects[g] = sel;
+      pkGrid.appendChild(ui.field(g, sel));
     });
-    var pk = ui.picker(groups, select);
-    pk.el.classList.add('stacked');
-    var pkGrid = CK.el('div', { class: 'cfg-grid', style: 'grid-template-columns:1fr;' });
-    pkGrid.appendChild(pk.el);
+    function syncSelects(id) { var e = getEnc(id), grp = e ? e.group : null; GROUP_ORDER.forEach(function (g) { groupSelects[g].value = (g === grp ? id : ''); }); }
     cfg.appendChild(pkGrid);
     root.appendChild(cfg);
 
@@ -263,7 +266,7 @@
     root.appendChild(io);
 
     function clearVerify() { outP.ta.classList.remove('verify-match', 'verify-fail'); inP.ta.classList.remove('verify-match', 'verify-fail'); }
-    function select(id) { var e = getEnc(id); if (!e) return; current = id; pk.setActive(id); ui.setSel(strip, e.label, e.badge, e.desc); clearVerify(); }
+    function select(id) { var e = getEnc(id); if (!e) return; current = id; syncSelects(id); ui.setSel(strip, e.label, e.badge, e.desc); clearVerify(); }
     function doEncode() { try { var e = getEnc(current); if (!inP.ta.value) throw new Error('Input is empty'); outP.ta.value = e.enc(inP.ta.value); clearVerify(); ctx.toast(e.label + ' encoded', 'success'); } catch (err) { ctx.toast(err.message, 'error'); } }
     function doDecode() { try { var e = getEnc(current); if (!inP.ta.value) throw new Error('Input is empty'); outP.ta.value = e.dec(inP.ta.value); clearVerify(); ctx.toast(e.label + ' decoded', 'success'); } catch (err) { ctx.toast(err.message, 'error'); } }
     function doSwap() { inP.ta.value = outP.ta.value; outP.ta.value = ''; clearVerify(); ctx.toast('Output moved to input', 'success'); }

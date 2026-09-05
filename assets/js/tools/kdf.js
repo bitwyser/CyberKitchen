@@ -101,25 +101,17 @@
     var colL = el('div', { class: 'bc-left' });
     var colR = el('div', { class: 'col' });
 
-    // Parameters column: algorithm-specific (PBKDF2 iterations+hash, or scrypt N/r/p)
+    // Parameters column (left): Algorithm, then Hash (PBKDF2) or scrypt params below it
     var paramsWrap = el('div', { class: 'col' });
     var algoSel = ui.select([['pbkdf2', 'PBKDF2'], ['scrypt', 'scrypt']].map(o), function (v) { algo = v; applyAlgo(); updateSel(); }, 'pbkdf2');
     paramsWrap.appendChild(ui.field('Algorithm', algoSel));
 
-    // PBKDF2 params
-    var pbWrap = el('div', { class: 'col' });
-    var iters = 310000;
-    var iterBtns = {}, iterRow = el('div', { style: 'display:flex; gap:5px; align-items:center; flex-wrap:wrap;' });
-    ITERS.forEach(function (v) { var b = el('button', { class: 'eb' }); b.textContent = (v / 1000) + 'k'; b.addEventListener('click', function () { iters = v; iterCustom.value = ''; markIters(); updateSel(); }); iterBtns[v] = b; iterRow.appendChild(b); });
-    var iterCustom = el('input', { class: 'inp sm', type: 'number', min: '1', placeholder: 'Custom' }); iterCustom.style.width = '90px';
-    iterCustom.addEventListener('input', function () { if (iterCustom.value !== '') { var n = +iterCustom.value; if (n >= 1) iters = n; } markIters(); updateSel(); });
-    iterRow.appendChild(iterCustom);
-    pbWrap.appendChild(ui.field('Iterations', iterRow));
+    // Hash (PBKDF2) directly below Algorithm
     var hashSel = ui.select([['SHA-256', 'SHA-256'], ['SHA-512', 'SHA-512'], ['SHA-384', 'SHA-384'], ['SHA-1', 'SHA-1']].map(o), function () { updateSel(); }, 'SHA-256');
-    pbWrap.appendChild(ui.field('Hash', hashSel));
-    paramsWrap.appendChild(pbWrap);
+    var hashField = ui.field('Hash', hashSel);
+    paramsWrap.appendChild(hashField);
 
-    // scrypt params
+    // scrypt params (shown below Algorithm in place of Hash)
     var scWrap = el('div', { class: 'col' }); scWrap.style.display = 'none';
     var scRow = el('div', { style: 'display:flex; gap:8px; align-items:flex-end; flex-wrap:wrap;' });
     var nSel = ui.select([['14', '16384 (2^14)'], ['15', '32768 (2^15)'], ['16', '65536 (2^16)'], ['12', '4096 (2^12)'], ['10', '1024 (2^10)']].map(o), function () { updateSel(); }, '14'); nSel.style.width = 'auto';
@@ -130,7 +122,7 @@
     scWrap.appendChild(scRow);
     paramsWrap.appendChild(scWrap);
 
-    // Salt column
+    // Salt column (right): Salt, then Iterations (PBKDF2) below it
     var saltWrap = el('div', { class: 'col' });
     var saltInput = el('input', { class: 'inp', type: 'text', spellcheck: 'false', autocomplete: 'off', placeholder: 'Salt' });
     var saltFmt = ui.select([['base64', 'Base64'], ['hex', 'Hexadecimal'], ['utf8', 'UTF-8']].map(o), null, 'base64');
@@ -139,6 +131,16 @@
     saltInput.style.flex = '1'; saltInput.style.minWidth = '0'; saltFmt.style.width = 'auto';
     saltRow.appendChild(saltInput); saltRow.appendChild(saltFmt); saltRow.appendChild(saltGen);
     saltWrap.appendChild(ui.field('Salt', saltRow));
+
+    // Iterations (PBKDF2) directly below Salt
+    var iters = 310000;
+    var iterBtns = {}, iterRow = el('div', { style: 'display:flex; gap:5px; align-items:center; flex-wrap:wrap;' });
+    ITERS.forEach(function (v) { var b = el('button', { class: 'eb' }); b.textContent = (v / 1000) + 'k'; b.addEventListener('click', function () { iters = v; iterCustom.value = ''; markIters(); updateSel(); }); iterBtns[v] = b; iterRow.appendChild(b); });
+    var iterCustom = el('input', { class: 'inp sm', type: 'number', min: '1', placeholder: 'Custom' }); iterCustom.style.width = '90px';
+    iterCustom.addEventListener('input', function () { if (iterCustom.value !== '') { var n = +iterCustom.value; if (n >= 1) iters = n; } markIters(); updateSel(); });
+    iterRow.appendChild(iterCustom);
+    var iterField = ui.field('Iterations', iterRow);
+    saltWrap.appendChild(iterField);
 
     colL.appendChild(paramsWrap); colL.appendChild(saltWrap);
 
@@ -164,7 +166,7 @@
     outP.ta.addEventListener('input', clearVerify);
 
     function markIters() { ITERS.forEach(function (v) { iterBtns[v].classList.toggle('active', iters === v && iterCustom.value === ''); }); }
-    function applyAlgo() { var sc = algo === 'scrypt'; pbWrap.style.display = sc ? 'none' : ''; scWrap.style.display = sc ? '' : 'none'; }
+    function applyAlgo() { var sc = algo === 'scrypt'; hashField.style.display = sc ? 'none' : ''; iterField.style.display = sc ? 'none' : ''; scWrap.style.display = sc ? '' : 'none'; }
     function updateSel() {
       if (algo === 'scrypt') { var N = Math.pow(2, +nSel.value); ui.setSel(strip, 'scrypt', 'RFC7914', 'scrypt · N=' + N.toLocaleString() + ' r=' + (+rInput.value || 8) + ' p=' + (+pInput.value || 1) + ' · ' + (+lenInput.value || 32) + '-byte key · memory-hard'); }
       else ui.setSel(strip, 'PBKDF2 · ' + hashSel.value, 'PBKDF2', 'PBKDF2-HMAC-' + hashSel.value + ' · ' + iters.toLocaleString() + ' iterations · ' + (+lenInput.value || 32) + '-byte key'); }

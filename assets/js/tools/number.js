@@ -116,34 +116,55 @@
     strip.acts.appendChild(ui.iconBtn(I_RESET, 'Reset', doReset));
     cfg.appendChild(strip.strip);
 
-    // Input base picker | Output representation picker
+    // Two sections (Input | Output); each has one dropdown per representation group
+    function buildSide(groups, onSelect) {
+      var selects = {}, wrap = el('div', { style: 'display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px 14px;' });
+      groups.forEach(function (g) {
+        var sel = ui.select([{ value: '', label: 'Select...' }].concat(g.items.map(function (it) { return { value: it.id, label: it.label }; })), function (v) { if (v) onSelect(v); }, '');
+        selects[g.label] = sel;
+        wrap.appendChild(ui.field(g.label, sel));
+      });
+      return { wrap: wrap, selects: selects };
+    }
+    function syncSide(selects, groups, id) {
+      var grp = null;
+      groups.forEach(function (g) { if (g.items.some(function (it) { return it.id === id; })) grp = g.label; });
+      Object.keys(selects).forEach(function (k) { selects[k].value = (k === grp ? id : ''); });
+    }
     var grid = el('div', { class: 'cfg-grid' }); grid.style.alignItems = 'start';
     var colL = el('div', { class: 'col' });
     var colR = el('div', { class: 'col' });
-    var inPk = ui.picker(IN_GROUPS, function (id) { from = id; syncOpts(); convert(); });
-    inPk.el.classList.add('stacked'); colL.appendChild(inPk.el);
-    var outPk = ui.picker(OUT_GROUPS, function (id) { outId = id; syncOpts(); convert(); });
-    outPk.el.classList.add('stacked'); colR.appendChild(outPk.el);
+    colL.appendChild(el('div', { class: 'panel-hdr', style: 'margin-bottom:6px;' }, 'INPUT'));
+    var inSide = buildSide(IN_GROUPS, function (id) { from = id; syncOpts(); convert(); });
+    colL.appendChild(inSide.wrap);
+    colR.appendChild(el('div', { class: 'panel-hdr', style: 'margin-bottom:6px;' }, 'OUTPUT'));
+    var outSide = buildSide(OUT_GROUPS, function (id) { outId = id; syncOpts(); convert(); });
+    colR.appendChild(outSide.wrap);
     grid.appendChild(colL); grid.appendChild(colR);
     cfg.appendChild(grid);
 
-    var form = el('div', { class: 'cfg-form' });
+    // Extra params live under their own section: input params under INPUT, output params under OUTPUT
     function mkWidth(cb) { return ui.select([['8', '8-bit'], ['16', '16-bit'], ['32', '32-bit'], ['64', '64-bit']].map(o), cb, '32'); }
+    var inForm = el('div', { class: 'cfg-form', style: 'padding:10px 0 0;' });
     var widthSelIn = mkWidth(function (v) { inWidth = +v; convert(); });
-    var widthFieldIn = ui.field('Input bit width', widthSelIn); widthFieldIn.style.display = 'none';
-    form.appendChild(widthFieldIn);
+    var widthFieldIn = ui.field('Bit width', widthSelIn); widthFieldIn.style.display = 'none';
+    inForm.appendChild(widthFieldIn);
     var custInputIn = el('input', { class: 'inp sm', type: 'number', min: '2', max: '36', value: '3' });
-    var custFieldIn = ui.field('Custom input base', custInputIn); custFieldIn.style.display = 'none';
+    var custFieldIn = ui.field('Custom base', custInputIn); custFieldIn.style.display = 'none';
     custInputIn.addEventListener('input', function () { inCustBase = Math.max(2, Math.min(36, +custInputIn.value || 2)); convert(); });
-    form.appendChild(custFieldIn);
+    inForm.appendChild(custFieldIn);
+    colL.appendChild(inForm);
+
+    var outForm = el('div', { class: 'cfg-form', style: 'padding:10px 0 0;' });
     var widthSelOut = mkWidth(function (v) { outWidth = +v; convert(); });
-    var widthFieldOut = ui.field('Output bit width', widthSelOut); widthFieldOut.style.display = 'none';
-    form.appendChild(widthFieldOut);
+    var widthFieldOut = ui.field('Bit width', widthSelOut); widthFieldOut.style.display = 'none';
+    outForm.appendChild(widthFieldOut);
     var custInputOut = el('input', { class: 'inp sm', type: 'number', min: '2', max: '36', value: '3' });
-    var custFieldOut = ui.field('Custom output base', custInputOut); custFieldOut.style.display = 'none';
+    var custFieldOut = ui.field('Custom base', custInputOut); custFieldOut.style.display = 'none';
     custInputOut.addEventListener('input', function () { outCustBase = Math.max(2, Math.min(36, +custInputOut.value || 2)); convert(); });
-    form.appendChild(custFieldOut);
-    cfg.appendChild(form);
+    outForm.appendChild(custFieldOut);
+    colR.appendChild(outForm);
+
     root.appendChild(cfg);
 
     var io = ui.ioRow();
@@ -198,7 +219,7 @@
     function clearVerify() { outP.ta.classList.remove('verify-match', 'verify-fail'); inP.ta.classList.remove('verify-match', 'verify-fail'); }
     function convert() {
       clearVerify();
-      inPk.setActive(from); outPk.setActive(outId);
+      syncSide(inSide.selects, IN_GROUPS, from); syncSide(outSide.selects, OUT_GROUPS, outId);
       var raw = inP.ta.value;
       if (!raw.trim()) { outP.ta.value = ''; ui.setSel(strip, 'Number', labelOf(from), 'Enter a value to convert'); return; }
       try {

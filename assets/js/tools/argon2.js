@@ -49,22 +49,18 @@
     strip.acts.appendChild(ui.iconBtn(I_RESET, 'Reset', doReset));
     cfg.appendChild(strip.strip);
 
-    // Left column split into 3 sub-columns: config (variant/memory/time) | parallelism + hash length | custom salt. Right column: output format only.
+    // Left column split into 4 sub-columns: variant | memory + time | parallelism + hash length | custom salt. Right column: output format only.
     var grid = el('div', { class: 'cfg-grid wide-left' });
     var colL = el('div', { class: 'argon-left' });
     var cfgWrap = el('div', { class: 'col' });
+    var memWrap = el('div', { class: 'col' });
     var parWrap = el('div', { class: 'col' });
     var saltWrap = el('div', { class: 'col' });
     var colR = el('div', { class: 'col' });
 
-    // Variant, inline on one line
-    var varBtns = {}, varRow = el('div', { style: 'display:flex; gap:5px;' });
-    [['d', 'argon2d'], ['i', 'argon2i'], ['id', 'argon2id']].forEach(function (a) {
-      var b = el('button', { class: 'eb' }); b.textContent = a[1];
-      b.addEventListener('click', function () { variant = a[0]; updateSel(); });
-      varBtns[a[0]] = b; varRow.appendChild(b);
-    });
-    cfgWrap.appendChild(ui.field('Variant', varRow));
+    // Variant dropdown
+    var varSel = ui.select([['id', 'argon2id'], ['i', 'argon2i'], ['d', 'argon2d']].map(o), function (v) { variant = v; updateSel(); }, 'id');
+    cfgWrap.appendChild(ui.field('Variant', varSel));
 
     var memInput = el('input', { class: 'inp sm', type: 'number', min: '256', max: '1048576', step: '256', value: '4096', placeholder: 'KiB' });
     var timeInput = el('input', { class: 'inp sm', type: 'number', min: '1', max: '20', value: '3', placeholder: 'n' });
@@ -82,7 +78,7 @@
     memInput.style.width = '92px'; memRow.appendChild(memInput);
     memInput.addEventListener('input', updateSel);
     function markMem() { MEMS.forEach(function (a) { memBtns[a[0]].classList.toggle('active', +memInput.value === a[0]); }); }
-    cfgWrap.appendChild(ui.field('Memory cost', memRow));
+    memWrap.appendChild(ui.field('Memory cost', memRow));
 
     // Time cost (iterations): 5 presets + custom input, all on one line
     var TIMES = [1, 2, 3, 4, 5];
@@ -95,7 +91,7 @@
     timeInput.style.width = '72px'; timeRow.appendChild(timeInput);
     timeInput.addEventListener('input', updateSel);
     function markTime() { TIMES.forEach(function (t) { timeBtns[t].classList.toggle('active', +timeInput.value === t); }); }
-    cfgWrap.appendChild(ui.field('Time cost (iterations)', timeRow));
+    memWrap.appendChild(ui.field('Time cost (iterations)', timeRow));
 
     // Second sub-column: Parallelism + Hash length
     parWrap.appendChild(ui.field('Parallelism', parInput));
@@ -114,7 +110,7 @@
     saltWrap.appendChild(saltField);
     saltCb.addEventListener('change', function () { saltField.style.display = saltCb.checked ? '' : 'none'; });
 
-    colL.appendChild(cfgWrap); colL.appendChild(parWrap); colL.appendChild(saltWrap);
+    colL.appendChild(cfgWrap); colL.appendChild(memWrap); colL.appendChild(parWrap); colL.appendChild(saltWrap);
 
     var outSel = ui.select([['encoded', 'Encoded'], ['hashonly', 'Hash only'], ['json', 'JSON']].map(o), null, 'encoded');
     colR.appendChild(ui.field('Output', outSel));
@@ -122,7 +118,7 @@
     grid.appendChild(colL); grid.appendChild(colR);
     cfg.appendChild(grid);
     root.appendChild(cfg);
-    function markVar() { Object.keys(varBtns).forEach(function (k) { varBtns[k].classList.toggle('active', k === variant); }); }
+    function markVar() { varSel.value = variant; }
 
     var io = ui.ioRow();
     var inP = ui.textPanel({ title: 'PASSWORD', icon: I_DROP, placeholder: 'Password to hash...', primaries: [{ label: 'Hash', cls: 'enc', onClick: doHash }], actions: ['copy', 'paste', 'clear', 'download'], downloadName: 'password.txt' });
