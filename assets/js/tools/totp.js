@@ -98,9 +98,13 @@
     io.appendChild(inP.panel); io.appendChild(outP.panel);
     root.appendChild(io);
 
-    // Live countdown progress bar under the code
-    var bar = el('div', { class: 'strength' }); var barSpan = el('span'); bar.appendChild(barSpan);
-    outP.panel.appendChild(bar);
+    // Live countdown: progress bar + seconds-remaining label, placed above the
+    // code so it does not collide with the char-count pill in the corner
+    var barWrap = el('div', { style: 'display:flex; align-items:center; gap:10px;' });
+    var bar = el('div', { class: 'strength' }); bar.style.flex = '1'; var barSpan = el('span'); bar.appendChild(barSpan);
+    var secLabel = el('span', { style: "font-family:'SF Mono','Consolas',monospace; font-size:12px; font-weight:800; min-width:38px; text-align:right;" });
+    barWrap.appendChild(bar); barWrap.appendChild(secLabel);
+    outP.panel.insertBefore(barWrap, outP.ta);
 
     function algo() { return algoSel.value; }
     function digits() { return +digitsSel.value; }
@@ -110,7 +114,7 @@
       var t = mode === 'totp';
       periodField.style.display = t ? '' : 'none';
       counterField.style.display = t ? 'none' : '';
-      bar.style.display = t ? '' : 'none';
+      barWrap.style.display = t ? '' : 'none';
       updateSel();
     }
     function updateSel() {
@@ -146,13 +150,17 @@
     // Live tick: keep the countdown current and roll the code over on each new step
     setInterval(function () {
       if (root.hidden || mode !== 'totp') return;
+      // Only run the countdown once a code exists (a secret has been entered)
+      if (!inP.ta.value.trim() || !outP.ta.value) { barSpan.style.width = '0%'; secLabel.textContent = ''; return; }
       var p = period(), now = Date.now() / 1000;
       var counter = Math.floor(now / p), remain = Math.ceil(p - (now % p));
+      var color = remain <= 5 ? 'var(--err)' : remain <= 10 ? 'var(--warn)' : 'var(--acc)';
       barSpan.style.width = Math.max(0, Math.min(100, (remain / p) * 100)) + '%';
-      barSpan.style.background = remain <= 5 ? 'var(--err)' : remain <= 10 ? 'var(--warn)' : 'var(--acc)';
-      var secret = inP.ta.value.trim();
-      if (secret) strip.desc.textContent = 'Valid for ' + remain + 's of ' + p + 's · ' + algo() + ' · ' + digits() + ' digits';
-      if (secret && counter !== lastCounter) { lastCounter = counter; regen(); }
+      barSpan.style.background = color;
+      secLabel.textContent = remain + 's';
+      secLabel.style.color = color;
+      strip.desc.textContent = 'Valid for ' + remain + 's of ' + p + 's · ' + algo() + ' · ' + digits() + ' digits';
+      if (counter !== lastCounter) { lastCounter = counter; regen(); }
     }, 250);
 
     var m = /(?:^|[#&])s=([\w-]+)/.exec(location.hash || '');
