@@ -99,8 +99,11 @@ body.nav-collapsed .item svg{width:17px; height:17px;}
 body.nav-collapsed .nav-toggle .ntxt{display:none;}
 body.nav-collapsed .nav-toggle svg{transform:rotate(180deg);}
 
-/* Content */
-main{padding:12px 14px; overflow:hidden; display:flex; flex-direction:column; min-width:0; gap:9px;}
+/* Content
+   Fill the viewport when there is room, but scroll instead of clipping when
+   the window is too short (or a config panel is tall) so nothing overlaps or
+   gets cut off on small screens. */
+main{padding:12px 14px; overflow-x:hidden; overflow-y:auto; display:flex; flex-direction:column; min-width:0; gap:9px;}
 .tool{display:flex; flex-direction:column; gap:9px; min-height:0; flex:1;}
 .tool[hidden]{display:none;}
 .tool-head{display:flex; align-items:center; gap:9px; flex-shrink:0;}
@@ -188,7 +191,9 @@ main{padding:12px 14px; overflow:hidden; display:flex; flex-direction:column; mi
 /* Input / Output */
 .io{flex:1; display:grid; grid-template-columns:1fr 1fr; gap:9px; min-height:0;}
 .io-1col{grid-template-columns:1fr;}
-.io-p{padding:11px 12px; gap:9px; position:relative;}
+/* Keep panels usably tall; when they cannot all fit, main scrolls rather than
+   squeezing them into each other. */
+.io-p{padding:11px 12px; gap:9px; position:relative; min-height:180px;}
 .fill{flex:1;}
 .tb{display:flex; gap:4px; align-items:center;}
 .btn.mini{
@@ -344,14 +349,25 @@ input[type=range]::-moz-range-thumb{width:14px; height:14px; border-radius:50%; 
   .nav-toggle{display:none;}
   .nav-backdrop{position:fixed; inset:44px 0 0 0; background:rgba(0,0,0,.42); z-index:35;}
   body.drawer-open .nav-backdrop{display:block;}
-  main{overflow-y:auto;}
   .io{grid-template-columns:1fr; min-height:0;}
   .io-p{min-height:220px;}
+  /* Let the algorithm label take the full first row so the action buttons
+     drop onto their own line instead of cramming beside it. */
   .cfg-strip{flex-wrap:wrap;}
+  .sel{flex:1 1 100%;}
+  .acts{width:100%; flex-wrap:wrap; justify-content:flex-end;}
   /* Collapsed state is a desktop-only concept; ignore it on mobile */
   body.nav-collapsed .shell{grid-template-columns:1fr;}
   body.nav-collapsed nav{padding:10px 9px;}
   body.nav-collapsed .grp{display:block;}
   body.nav-collapsed .item{font-size:12.5px; justify-content:flex-start; padding:6px 9px; gap:9px;}
   body.nav-collapsed .item .tag{display:inline;}
+}
+
+/* Narrow phones: drop the header subtitle so the brand never crowds the
+   theme toggle, and let config forms breathe in a single column. */
+@media (max-width:520px){
+  header{padding:0 12px; gap:7px;}
+  .sub, .dot{display:none;}
+  .cfg-form{gap:10px 12px;}
 }
