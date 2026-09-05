@@ -255,9 +255,6 @@ var CK = (function () {
       store.set('nav.collapsed', document.body.classList.contains('nav-collapsed') ? '1' : '0');
     });
 
-    var hamb = document.getElementById('hamburger');
-    if (hamb) hamb.addEventListener('click', function () { document.body.classList.toggle('drawer-open'); });
-
     var backdrop = document.getElementById('backdrop');
     if (backdrop) backdrop.addEventListener('click', function () { document.body.classList.remove('drawer-open'); });
   }

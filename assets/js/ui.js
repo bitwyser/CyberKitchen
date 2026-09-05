@@ -16,6 +16,11 @@ CK.ui = (function () {
 
   function head(label) {
     var h = el('div', { class: 'tool-head' });
+    // Menu toggle: shares the title line, shown only on small screens (see .nav-open)
+    var menu = el('button', { class: 'nav-open', title: 'Menu', 'aria-label': 'Open menu' });
+    menu.innerHTML = iconSvg('<path d="M3 6h18M3 12h18M3 18h18"/>', 16);
+    menu.addEventListener('click', function () { document.body.classList.toggle('drawer-open'); });
+    h.appendChild(menu);
     var h1 = el('h1'); h1.textContent = label; h.appendChild(h1);
     return h;
   }
