@@ -57,21 +57,31 @@
   <script src="assets/js/tools/rsa.js"></script>
   <script src="assets/js/tools/bcrypt.js"></script>
   <script src="assets/js/tools/argon2.js"></script>
+  <script src="assets/js/tools/kdf.js"></script>
+  <script src="assets/js/tools/hashid.js"></script>
+  <script src="assets/js/tools/totp.js"></script>
+  <script src="assets/js/tools/jwt.js"></script>
+  <script src="assets/js/tools/x509.js"></script>
   <script>
     /* Tool manifest. Icons are inner SVG paths (rendered by CK.iconSvg).
        Each tool's logic is registered later via CK.registerTool(id, fn). */
     CK.defineTools([
-      { id:'aes',       label:'AES',                category:'Encryption', tag:'AES',  icon:'<circle cx="8" cy="15" r="4"/><path d="M10.8 12.2 20 3M17 6l3 0 0 3M14 9l2 2"/>' },
-      { id:'rsa',       label:'RSA',                category:'Encryption', tag:'RSA',  icon:'<path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z"/>' },
-      { id:'classical', label:'Classical Ciphers',  category:'Encryption', tag:'27',   icon:'<path d="M4 7V5h16v2M9 20h6M12 5v15"/>' },
-      { id:'hash',      label:'Cryptographic',      category:'Hashing',    tag:'SHA3', icon:'<path d="M4 9h16M4 15h16M10 3 8 21M16 3l-2 18"/>' },
-      { id:'bcrypt',    label:'Bcrypt',             category:'Hashing',    tag:'bc',   icon:'<path d="M6.5 12c3-5 8-5 11 0-3 5-8 5-11 0zM15 11.5v.01"/>' },
-      { id:'argon2',    label:'Argon2',             category:'Hashing',    tag:'a2',   icon:'<path d="M12 3c3 4 5 6.5 5 10a5 5 0 0 1-10 0c0-3.5 2-6 5-10z"/>' },
-      { id:'encode',    label:'Encoder / Decoder',  category:'Encoding',   tag:'26',   icon:'<path d="M7 7 3 12l4 5M17 7l4 5-4 5M14 4l-4 16"/>' },
-      { id:'number',    label:'Number Converter',   category:'Encoding',   tag:'hex',  icon:'<path d="M6 4v16M6 4h4a3 3 0 0 1 0 6H6M14 4h4v6h-4zM14 14h4v6h-4z"/>' },
-      { id:'password',  label:'Password Generator', category:'Generators', tag:'pw',   icon:'<rect x="4" y="4" width="16" height="16" rx="3"/><circle cx="9" cy="9" r="1.2"/><circle cx="15" cy="15" r="1.2"/><circle cx="15" cy="9" r="1.2"/><circle cx="9" cy="15" r="1.2"/>' },
-      { id:'fakedata',  label:'Fake Data',          category:'Generators', tag:'fkr',  icon:'<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/>' }
-    ], ['Encryption','Hashing','Encoding','Generators']);
+      { id:'aes',       label:'AES',                category:'Encryption',     tag:'AES',  icon:'<circle cx="8" cy="15" r="4"/><path d="M10.8 12.2 20 3M17 6l3 0 0 3M14 9l2 2"/>' },
+      { id:'rsa',       label:'RSA',                category:'Encryption',     tag:'RSA',  icon:'<path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z"/>' },
+      { id:'x509',      label:'X.509 Certificate',  category:'Encryption',     tag:'x509', icon:'<rect x="4" y="3" width="16" height="13" rx="2"/><circle cx="12" cy="8" r="2.5"/><path d="M9.5 14l-1 6 3.5-2 3.5 2-1-6"/>' },
+      { id:'classical', label:'Classical Ciphers',  category:'Encryption',     tag:'27',   icon:'<path d="M4 7V5h16v2M9 20h6M12 5v15"/>' },
+      { id:'hash',      label:'Cryptographic',      category:'Hashing',        tag:'SHA3', icon:'<path d="M4 9h16M4 15h16M10 3 8 21M16 3l-2 18"/>' },
+      { id:'kdf',       label:'Key Derivation',     category:'Hashing',        tag:'KDF',  icon:'<path d="M3 5h18l-7 8v6l-4 2v-8z"/>' },
+      { id:'bcrypt',    label:'Bcrypt',             category:'Hashing',        tag:'bc',   icon:'<path d="M6.5 12c3-5 8-5 11 0-3 5-8 5-11 0zM15 11.5v.01"/>' },
+      { id:'argon2',    label:'Argon2',             category:'Hashing',        tag:'a2',   icon:'<path d="M12 3c3 4 5 6.5 5 10a5 5 0 0 1-10 0c0-3.5 2-6 5-10z"/>' },
+      { id:'hashid',    label:'Hash Identifier',    category:'Hashing',        tag:'ID',   icon:'<circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/>' },
+      { id:'encode',    label:'Encoder / Decoder',  category:'Encoding',       tag:'26',   icon:'<path d="M7 7 3 12l4 5M17 7l4 5-4 5M14 4l-4 16"/>' },
+      { id:'number',    label:'Number Converter',   category:'Encoding',       tag:'hex',  icon:'<path d="M6 4v16M6 4h4a3 3 0 0 1 0 6H6M14 4h4v6h-4zM14 14h4v6h-4z"/>' },
+      { id:'totp',      label:'TOTP / HOTP',        category:'Authentication', tag:'2FA',  icon:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>' },
+      { id:'jwt',       label:'JSON Web Token',     category:'Authentication', tag:'JWT',  icon:'<path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z"/><path d="M9 12l2 2 4-4"/>' },
+      { id:'password',  label:'Password Generator', category:'Generators',     tag:'pw',   icon:'<rect x="4" y="4" width="16" height="16" rx="3"/><circle cx="9" cy="9" r="1.2"/><circle cx="15" cy="15" r="1.2"/><circle cx="15" cy="9" r="1.2"/><circle cx="9" cy="15" r="1.2"/>' },
+      { id:'fakedata',  label:'Fake Data',          category:'Generators',     tag:'fkr',  icon:'<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/>' }
+    ], ['Encryption','Hashing','Encoding','Authentication','Generators']);
 
     CK.boot();
 
