@@ -5,7 +5,7 @@
    navigations fall back to the app shell when offline.
    Relative paths keep it working under any base path (e.g. /CyberKitchen/).
 */
-var CACHE = 'cyberkitchen-v4';
+var CACHE = 'cyberkitchen-v5';
 var ASSETS = [
   './',
   'index.html',
@@ -32,7 +32,9 @@ var ASSETS = [
   'assets/js/tools/hashid.js',
   'assets/js/tools/totp.js',
   'assets/js/tools/jwt.js',
-  'assets/js/tools/x509.js'
+  'assets/js/tools/x509.js',
+  'assets/js/tools/cidr.js',
+  'assets/js/tools/ipconv.js'
 ];
 
 self.addEventListener('install', function (e) {
