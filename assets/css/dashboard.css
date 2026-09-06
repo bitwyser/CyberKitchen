@@ -381,15 +381,21 @@ input[type=range]::-moz-range-thumb{width:14px; height:14px; border-radius:50%; 
 .nav-backdrop{display:none; position:fixed; inset:44px 0 0 0; background:rgba(0,0,0,.42); z-index:35;}
 body.drawer-open .nav-backdrop{display:block;}
 
-/* Small screens: single-column I/O and stacked config strip */
+/* Small screens: single-column I/O and stacked config strip.
+   Let the tool flow at its natural height (rather than stretching to fill the
+   viewport) so tall content scrolls the page instead of being squeezed or
+   clipped, and panels never overlap. */
 @media (max-width:820px){
-  .io{grid-template-columns:1fr; min-height:0;}
+  .tool{flex:none;}
+  .io{flex:none; grid-template-columns:1fr; min-height:0;}
   .io-p{min-height:220px;}
   /* Let the algorithm label take the full first row so the action buttons
      drop onto their own line instead of cramming beside it. */
   .cfg-strip{flex-wrap:wrap;}
   .sel{flex:1 1 100%;}
   .acts{width:100%; flex-wrap:wrap; justify-content:flex-end;}
+  /* Flow the landing page from the top so the footer is never clipped */
+  .home-inner{margin:0;}
 }
 
 /* Narrow phones: drop the header subtitle so the brand never crowds the
