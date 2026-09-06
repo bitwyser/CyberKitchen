@@ -391,8 +391,13 @@ body.drawer-open .nav-backdrop{display:block;}
   .shell{display:block; min-height:0;}
   main{overflow:visible; height:auto; padding:12px 12px 24px;}
   .tool{flex:none;}
-  .io{flex:none; grid-template-columns:1fr; min-height:0;}
+  /* minmax(0,1fr) stops a panel's non-wrapping header toolbar from forcing the
+     column wider than the viewport (which clipped input/output on the right) */
+  .io{flex:none; grid-template-columns:minmax(0,1fr); min-height:0;}
   .io-p{min-height:220px;}
+  /* Wrap the panel header toolbar so its buttons never overflow a narrow panel */
+  .panel-hdr{flex-wrap:wrap;}
+  .tb{flex-wrap:wrap; justify-content:flex-end;}
   /* Let the algorithm label take the full first row so the action buttons
      drop onto their own line instead of cramming beside it. */
   .cfg-strip{flex-wrap:wrap;}
