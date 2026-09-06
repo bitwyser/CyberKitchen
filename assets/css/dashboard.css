@@ -28,6 +28,13 @@ body{
 svg{display:block;}
 button{font-family:inherit;}
 
+/* Slim scrollbars across every tool and scrollable area */
+*{scrollbar-width:thin; scrollbar-color:var(--cbdr) transparent;}
+::-webkit-scrollbar{width:8px; height:8px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--cbdr); border-radius:8px;}
+::-webkit-scrollbar-thumb:hover{background:var(--muted);}
+
 /* Slim top bar */
 header{
   display:flex; align-items:center; gap:9px; padding:0 16px;
