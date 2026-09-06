@@ -121,6 +121,7 @@ var CK = (function () {
   var _containers = {};     // id -> DOM element (created lazily)
   var _apis = {};           // id -> object returned by mount (optional)
   var _active = null;
+  var _homeEl = null;       // landing page shown when no tool is selected
 
   function defineTools(list, categoryOrder) {
     _tools = list || [];
@@ -223,11 +224,70 @@ var CK = (function () {
     Object.keys(_containers).forEach(function (k) {
       _containers[k].hidden = (k !== id);
     });
+    if (_homeEl) _homeEl.hidden = true;
     _markActiveRail(id);
     var t = getTool(id);
     if (t) document.title = t.label + ' - CyberKitchen';
     var api = _apis[id];
     if (api && typeof api.onActivate === 'function') api.onActivate();
+  }
+
+  /* Home / landing page: shown when no tool is selected.
+     Per-category card metadata (icon, one-line description, accent colour). */
+  var CAT_META = {
+    Encryption: { color: '#3b82f6', desc: 'Symmetric & asymmetric encryption', icon: '<rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>' },
+    Hashing: { color: '#10b981', desc: 'Hashing & key derivation', icon: '<path d="M4 9h16M4 15h16M10 3 8 21M16 3l-2 18"/>' },
+    Encoding: { color: '#f59e0b', desc: 'Encode, decode & convert', icon: '<path d="M8 6 3 12l5 6M16 6l5 6-5 6M13 4l-2 16"/>' },
+    Authentication: { color: '#8b5cf6', desc: 'One-time codes & tokens', icon: '<path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z"/><path d="M9 12l2 2 4-4"/>' },
+    Networking: { color: '#06b6d4', desc: 'IP & subnet calculators', icon: '<rect x="9" y="3" width="6" height="5" rx="1"/><rect x="3" y="16" width="6" height="5" rx="1"/><rect x="15" y="16" width="6" height="5" rx="1"/><path d="M12 8v4M6 16v-2h12v2"/>' },
+    Developer: { color: '#ec4899', desc: 'Everyday developer utilities', icon: '<path d="M8 4H6a2 2 0 0 0-2 2v4l-2 2 2 2v4a2 2 0 0 0 2 2h2M16 4h2a2 2 0 0 1 2 2v4l2 2-2 2v4a2 2 0 0 1-2 2h-2"/>' },
+    Generators: { color: '#6366f1', desc: 'Passwords, data & QR codes', icon: '<path d="m4 20 10-10M14.5 4.5l1 2 2 1-2 1-1 2-1-2-2-1 2-1zM6.5 11.5l.8 1.7 1.7.8-1.7.8-.8 1.7-.8-1.7-1.7-.8 1.7-.8z"/>' }
+  };
+  function _rgba(hex, a) { var n = parseInt(hex.slice(1), 16); return 'rgba(' + ((n >> 16) & 255) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + a + ')'; }
+
+  function _buildHome() {
+    var wrap = el('div', { class: 'home' });
+    var inner = el('div', { class: 'home-inner' });
+    var hero = el('div', { class: 'home-hero' });
+    hero.innerHTML = '<h1>Recipes for Hackers</h1><p>A browser-based toolkit for encryption, hashing, key derivation, encoding, conversion, authentication, networking and developer utilities. All processing happens locally, so no data ever leaves your machine.</p>';
+    inner.appendChild(hero);
+    var grid = el('div', { class: 'home-grid' });
+    var cats = _categoryOrder.slice();
+    _tools.forEach(function (t) { if (cats.indexOf(t.category) === -1) cats.push(t.category); });
+    cats.forEach(function (cat) {
+      var inCat = _tools.filter(function (t) { return t.category === cat; });
+      if (!inCat.length) return;
+      var meta = CAT_META[cat] || { color: '#3b82f6', desc: '', icon: '<circle cx="12" cy="12" r="9"/>' };
+      var card = el('div', { class: 'home-cat-card' });
+      var head = el('div', { class: 'hcc-head' });
+      head.innerHTML = '<span class="hcc-ico" style="background:' + _rgba(meta.color, 0.13) + ';color:' + meta.color + '">' + iconSvg(meta.icon, 19) + '</span>' +
+        '<span class="hcc-txt"><span class="hcc-title">' + cat + '</span><span class="hcc-desc">' + meta.desc + '</span></span>';
+      card.appendChild(head);
+      var list = el('div', { class: 'hcc-tools' });
+      inCat.forEach(function (t) {
+        var row = el('button', { class: 'hcc-tool', 'data-id': t.id, title: t.label });
+        row.innerHTML = '<span class="hcc-ticon">' + iconSvg(t.icon, 15) + '</span><span class="hcc-tname">' + t.label + '</span>' + (t.tag ? '<span class="hcc-ttag">' + t.tag + '</span>' : '');
+        row.addEventListener('click', function () { navigate(t.id); });
+        list.appendChild(row);
+      });
+      card.appendChild(list);
+      grid.appendChild(card);
+    });
+    inner.appendChild(grid);
+    wrap.appendChild(inner);
+    var footer = el('div', { class: 'home-footer' });
+    footer.innerHTML = 'Designed by <a href="https://github.com/bitwyser" target="_blank" rel="noopener">BitWyser</a>';
+    wrap.appendChild(footer);
+    return wrap;
+  }
+  function showHome() {
+    _active = null;
+    var main = document.getElementById('main');
+    if (!_homeEl) { _homeEl = _buildHome(); main.appendChild(_homeEl); }
+    Object.keys(_containers).forEach(function (k) { _containers[k].hidden = true; });
+    _homeEl.hidden = false;
+    _markActiveRail(null);
+    document.title = 'CyberKitchen - Recipes for Hackers';
   }
 
   /* Router */
@@ -241,7 +301,8 @@ var CK = (function () {
   }
   function _onHash() {
     var id = currentId();
-    if (id && id !== _active) activate(id);
+    if (id) { if (id !== _active) activate(id); }
+    else if (_active !== null || !_homeEl) showHome();
   }
 
   /* Shell wiring */
@@ -251,13 +312,22 @@ var CK = (function () {
 
     var backdrop = document.getElementById('backdrop');
     if (backdrop) backdrop.addEventListener('click', function () { document.body.classList.remove('drawer-open'); });
+
+    // Brand returns to the home page without a full reload
+    var brand = document.querySelector('.brand');
+    if (brand) brand.addEventListener('click', function (e) {
+      e.preventDefault();
+      document.body.classList.remove('drawer-open');
+      if (currentId()) location.hash = ''; else showHome();
+    });
   }
 
   function boot() {
     theme.load();
     buildRail();
     _wireShell();
-    activate(currentId() || (_tools[0] && _tools[0].id));
+    var id = currentId();
+    if (id) activate(id); else showHome();
     window.addEventListener('hashchange', _onHash);
   }
 
