@@ -356,10 +356,10 @@ input[type=range]::-moz-range-thumb{width:14px; height:14px; border-radius:50%; 
   background:linear-gradient(120deg,#3b82f6,#8b5cf6);
   -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
 }
-.home-hero p{font-size:12.5px; color:var(--muted); margin:9px auto 0; max-width:540px; line-height:1.55;}
+.home-hero p{font-size:12.5px; color:var(--muted); margin:9px auto 0; max-width:760px; line-height:1.55;}
 /* Masonry via CSS multi-column: cards flow down and columns balance by height,
    so there is no ragged last row regardless of how many categories there are. */
-.home-grid{column-width:290px; column-gap:12px;}
+.home-grid{column-width:290px; column-gap:14px;}
 .home-cat-card{
   background:var(--surf); border:1px solid var(--cbdr); border-radius:12px; padding:12px;
   display:flex; flex-direction:column; gap:8px; margin:0 0 12px;
