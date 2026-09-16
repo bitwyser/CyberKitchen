@@ -251,7 +251,13 @@ var CK = (function () {
     var hero = el('div', { class: 'home-hero' });
     hero.innerHTML = '<h1>Recipes for Hackers</h1><p>A browser-based toolkit for encryption, hashing, key derivation, encoding, conversion, authentication, networking and developer utilities. All processing happens locally, so no data ever leaves your machine.</p>';
     inner.appendChild(hero);
+
+    // Live tool search
+    var search = el('input', { class: 'home-search', type: 'search', placeholder: 'Search tools...', spellcheck: 'false', autocomplete: 'off', 'aria-label': 'Search tools' });
+    inner.appendChild(search);
+
     var grid = el('div', { class: 'home-grid' });
+    var sections = [];
     var cats = _categoryOrder.slice();
     _tools.forEach(function (t) { if (cats.indexOf(t.category) === -1) cats.push(t.category); });
     cats.forEach(function (cat) {
@@ -260,24 +266,43 @@ var CK = (function () {
       var meta = CAT_META[cat] || { color: '#3b82f6', desc: '', icon: '<circle cx="12" cy="12" r="9"/>' };
       var card = el('div', { class: 'home-cat-card' });
       var head = el('div', { class: 'hcc-head' });
+      // Accent underline in the category colour separates one section from the next
+      head.style.borderBottom = '2px solid ' + _rgba(meta.color, 0.45);
+      head.style.paddingBottom = '9px';
       head.innerHTML = '<span class="hcc-ico" style="background:' + _rgba(meta.color, 0.13) + ';color:' + meta.color + '">' + iconSvg(meta.icon, 19) + '</span>' +
         '<span class="hcc-txt"><span class="hcc-title">' + cat + '</span><span class="hcc-desc">' + meta.desc + '</span></span>';
       card.appendChild(head);
       var list = el('div', { class: 'hcc-tools' });
+      var rows = [];
       inCat.forEach(function (t) {
         var row = el('button', { class: 'hcc-tool', 'data-id': t.id, title: t.label });
         row.innerHTML = '<span class="hcc-ticon">' + iconSvg(t.icon, 15) + '</span><span class="hcc-tname">' + t.label + '</span>' + (t.tag ? '<span class="hcc-ttag">' + t.tag + '</span>' : '');
         row.addEventListener('click', function () { navigate(t.id); });
         list.appendChild(row);
+        rows.push({ el: row, id: t.id, text: (t.label + ' ' + (t.tag || '') + ' ' + cat + ' ' + (meta.desc || '')).toLowerCase() });
       });
       card.appendChild(list);
       grid.appendChild(card);
+      sections.push({ card: card, rows: rows });
     });
     inner.appendChild(grid);
     wrap.appendChild(inner);
-    var footer = el('div', { class: 'home-footer' });
-    footer.innerHTML = 'Designed by <a href="https://github.com/bitwyser" target="_blank" rel="noopener">BitWyser</a>';
-    wrap.appendChild(footer);
+
+    function filterTools() {
+      var q = search.value.trim().toLowerCase();
+      sections.forEach(function (sec) {
+        var any = false;
+        sec.rows.forEach(function (r) { var hit = !q || r.text.indexOf(q) >= 0; r.el.style.display = hit ? '' : 'none'; if (hit) any = true; });
+        sec.card.style.display = any ? '' : 'none';
+      });
+    }
+    search.addEventListener('input', filterTools);
+    search.addEventListener('keydown', function (e) {
+      if (e.key !== 'Enter') return;
+      for (var i = 0; i < sections.length; i++) for (var j = 0; j < sections[i].rows.length; j++) {
+        if (sections[i].rows[j].el.style.display !== 'none') { navigate(sections[i].rows[j].id); return; }
+      }
+    });
     return wrap;
   }
   function showHome() {
