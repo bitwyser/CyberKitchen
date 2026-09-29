@@ -48,8 +48,10 @@
   <script src="assets/js/tools/password.js"></script>
   <script src="assets/js/tools/fakedata.js"></script>
   <script src="assets/js/tools/hash.js"></script>
+  <script src="assets/js/tools/checksum.js"></script>
   <script src="assets/js/tools/aes.js"></script>
   <script src="assets/js/tools/rsa.js"></script>
+  <script src="assets/js/tools/signature.js"></script>
   <script src="assets/js/tools/bcrypt.js"></script>
   <script src="assets/js/tools/argon2.js"></script>
   <script src="assets/js/tools/kdf.js"></script>
@@ -73,9 +75,11 @@
     CK.defineTools([
       { id:'aes',       label:'AES',                category:'Encryption',     tag:'AES',  icon:'<circle cx="8" cy="15" r="4"/><path d="M10.8 12.2 20 3M17 6l3 0 0 3M14 9l2 2"/>' },
       { id:'rsa',       label:'RSA',                category:'Encryption',     tag:'RSA',  icon:'<path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z"/>' },
+      { id:'signature', label:'Digital Signatures', category:'Encryption',     tag:'sig',  icon:'<path d="M3 17c3-3 5-8 7-8s-1 7 1 7 3-4 4-4 1 3 3 3h3M3 21h18"/>' },
       { id:'x509',      label:'X.509 Certificate',  category:'Encryption',     tag:'x509', icon:'<rect x="4" y="3" width="16" height="13" rx="2"/><circle cx="12" cy="8" r="2.5"/><path d="M9.5 14l-1 6 3.5-2 3.5 2-1-6"/>' },
       { id:'classical', label:'Classical Ciphers',  category:'Encryption',     tag:'27',   icon:'<path d="M4 7V5h16v2M9 20h6M12 5v15"/>' },
       { id:'hash',      label:'Cryptographic',      category:'Hashing',        tag:'SHA3', icon:'<path d="M4 9h16M4 15h16M10 3 8 21M16 3l-2 18"/>' },
+      { id:'checksum',  label:'File Checksum',      category:'Hashing',        tag:'sum',  icon:'<path d="M14 3v5h5M6 3h9l5 5v13H6z"/><path d="m9 14 2 2 4-4"/>' },
       { id:'kdf',       label:'Key Derivation',     category:'Hashing',        tag:'KDF',  icon:'<path d="M3 5h18l-7 8v6l-4 2v-8z"/>' },
       { id:'bcrypt',    label:'Bcrypt',             category:'Hashing',        tag:'bc',   icon:'<path d="M6.5 12c3-5 8-5 11 0-3 5-8 5-11 0zM15 11.5v.01"/>' },
       { id:'argon2',    label:'Argon2',             category:'Hashing',        tag:'a2',   icon:'<path d="M12 3c3 4 5 6.5 5 10a5 5 0 0 1-10 0c0-3.5 2-6 5-10z"/>' },

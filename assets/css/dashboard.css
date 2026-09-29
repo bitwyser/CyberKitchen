@@ -333,6 +333,15 @@ input[type=range]::-moz-range-thumb{width:14px; height:14px; border-radius:50%; 
 .md-preview th{background:var(--inset2); font-weight:700;}
 .md-preview > :first-child{margin-top:0;}
 
+/* File Checksum: drop zone (a .ta so Verify colours it like the text panels) */
+.cs-drop{display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; text-align:center; cursor:pointer; font-family:inherit; white-space:normal; word-break:break-word; min-height:150px;}
+.cs-drop:hover, .cs-drop.drag{border-color:var(--acc);}
+.cs-drop.drag{background:rgba(59,130,246,.06);}
+.cs-drop svg{stroke:var(--faint);}
+.cs-drop .cs-name{font-size:13px; font-weight:700; color:var(--txt);}
+.cs-drop .cs-meta{font-size:11px; color:var(--muted); font-family:'SF Mono','Consolas',monospace;}
+.cs-drop .cs-hint{font-size:11.5px; color:var(--muted);}
+
 /* HTML Viewer: sandboxed preview frame and captured console */
 .html-frame{flex:1; width:100%; min-height:240px; border:1px solid var(--bdr); border-radius:9px; background:#fff;}
 .html-console{border:1px solid var(--bdr); border-radius:9px; background:var(--inset); display:flex; flex-direction:column; max-height:150px; flex-shrink:0;}
